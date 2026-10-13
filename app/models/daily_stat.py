@@ -1,10 +1,13 @@
-from datetime import datetime
+from typing import Any, ClassVar
 from app.extensions import db
 
 
 class DailyStat(db.Model):
     """Aggregated daily PPE compliance statistics."""
     __tablename__ = "daily_stats"
+    __allow_unmapped__ = True
+
+    query: ClassVar[Any]
 
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.String(10), unique=True, nullable=False, index=True)  # YYYY-MM-DD
@@ -14,6 +17,26 @@ class DailyStat(db.Model):
     gloves_not = db.Column(db.Integer, default=0, nullable=False)
     total_workers = db.Column(db.Integer, default=0, nullable=False)
     compliance_rate = db.Column(db.Float, default=100.0, nullable=False)  # percentage 0.0 - 100.0
+
+    def __init__(
+        self,
+        date: str = "",
+        hardhat_not: int = 0,
+        vest_not: int = 0,
+        mask_not: int = 0,
+        gloves_not: int = 0,
+        total_workers: int = 0,
+        compliance_rate: float = 100.0,
+        **kwargs: Any,
+    ):
+        super().__init__(**kwargs)
+        self.date = date
+        self.hardhat_not = hardhat_not
+        self.vest_not = vest_not
+        self.mask_not = mask_not
+        self.gloves_not = gloves_not
+        self.total_workers = total_workers
+        self.compliance_rate = compliance_rate
 
     @property
     def total_violations(self) -> int:

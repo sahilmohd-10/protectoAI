@@ -1,11 +1,15 @@
+from typing import Any, Optional, ClassVar
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from app.extensions import db
 
 
 class Camera(db.Model):
     """Camera source configuration with support for ROI restricted polygons."""
     __tablename__ = "cameras"
+    __allow_unmapped__ = True
+
+    query: ClassVar[Any]
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -13,7 +17,23 @@ class Camera(db.Model):
     source_path = db.Column(db.String(255), nullable=False)  # '0', file path, or rtsp://...
     is_active = db.Column(db.Boolean, default=True)
     polygon_roi = db.Column(db.Text, nullable=True)  # JSON-encoded array of [x, y] coordinates
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    def __init__(
+        self,
+        name: str = "",
+        source_type: str = "file",
+        source_path: str = "0",
+        is_active: bool = True,
+        polygon_roi: Optional[str] = None,
+        **kwargs: Any,
+    ):
+        super().__init__(**kwargs)
+        self.name = name
+        self.source_type = source_type
+        self.source_path = source_path
+        self.is_active = is_active
+        self.polygon_roi = polygon_roi
 
     def get_roi_points(self):
         """Returns ROI coordinates as a list of [x, y] pairs, or None if not set."""

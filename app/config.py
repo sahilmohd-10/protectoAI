@@ -44,4 +44,11 @@ class Config:
     DEFAULT_CONFIDENCE = float(os.getenv("DEFAULT_CONFIDENCE", "0.25"))
     ALERT_COOLDOWN_SECONDS = int(os.getenv("ALERT_COOLDOWN_SECONDS", "30"))
 
+    # Telegram Alerting & Reporting
+    BOT_TOKEN = os.getenv("BOT_TOKEN", "")
+    CHAT_ID = os.getenv("CHAT_ID", "")
+    ENABLE_TELEGRAM = os.getenv("ENABLE_TELEGRAM", "false").lower() in ("true", "1", "yes")
+    WEEKLY_REPORT_DAY = os.getenv("WEEKLY_REPORT_DAY", "sunday")
+    WEEKLY_REPORT_TIME = os.getenv("WEEKLY_REPORT_TIME", "18:00")
+
 

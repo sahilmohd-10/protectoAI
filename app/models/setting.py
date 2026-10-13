@@ -1,13 +1,29 @@
+from typing import Any, Optional, ClassVar
 from app.extensions import db
 
 
 class Setting(db.Model):
     """System runtime settings and configuration overrides."""
     __tablename__ = "settings"
+    __allow_unmapped__ = True
+
+    query: ClassVar[Any]
 
     key = db.Column(db.String(64), primary_key=True)
     value = db.Column(db.String(255), nullable=False)
     description = db.Column(db.String(255), nullable=True)
+
+    def __init__(
+        self,
+        key: str = "",
+        value: str = "",
+        description: Optional[str] = None,
+        **kwargs: Any,
+    ):
+        super().__init__(**kwargs)
+        self.key = key
+        self.value = value
+        self.description = description
 
     @classmethod
     def get_value(cls, key: str, default=None):
@@ -16,7 +32,7 @@ class Setting(db.Model):
         return item.value if item else default
 
     @classmethod
-    def set_value(cls, key: str, value: str, description: str = None):
+    def set_value(cls, key: str, value: str, description: Optional[str] = None):
         """Upsert a setting value."""
         item = cls.query.filter_by(key=key).first()
         if item:

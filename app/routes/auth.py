@@ -94,8 +94,8 @@ def register():
         details, error = normalize_account_details(request.form)
         confirm = request.form.get("confirm_password", "")
 
-        if error:
-            flash(error, "danger")
+        if error or not details:
+            flash(error or "Invalid details provided.", "danger")
         elif details["password"] != confirm:
             flash("Passwords do not match.", "danger")
         elif User.query.filter_by(username=details["username"]).first():
@@ -152,8 +152,8 @@ def create_user_by_admin():
     data = request.get_json() or {}
     details, error = normalize_account_details(data)
     role = str(data.get("role", "user") or "user").strip().lower()
-    if error:
-        return jsonify({"status": "error", "message": error}), 400
+    if error or not details:
+        return jsonify({"status": "error", "message": error or "Invalid user details."}), 400
     if role not in ("admin", "user"):
         return jsonify({"status": "error", "message": "Role must be Admin or User."}), 400
 
