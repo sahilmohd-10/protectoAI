@@ -42,7 +42,6 @@ instance/*.db
 instance/*.sqlite
 
 # Media & Videos
-*.mp4
 *.avi
 *.mov
 *.mkv

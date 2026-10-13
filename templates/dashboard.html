@@ -367,12 +367,19 @@
   async function refreshTodayStats() {
     try {
       const res = await fetch('/api/stats');
+      if (!res.ok) return;
       const data = await res.json();
-      const cur = parseInt(document.getElementById('kpi-violations-today').textContent || 0);
-      if (cur !== data.violations_today) {
-        animateValue(document.getElementById('kpi-violations-today'), cur, data.violations_today, 400);
+      const kpiToday = document.getElementById('kpi-violations-today');
+      if (kpiToday && typeof data.violations_today !== 'undefined') {
+        const cur = parseInt(kpiToday.textContent || '0', 10) || 0;
+        if (cur !== data.violations_today) {
+          animateValue(kpiToday, cur, data.violations_today, 400);
+        }
       }
-      document.getElementById('kpi-most-missed').textContent = data.most_missed_ppe || '-';
+      const kpiMissed = document.getElementById('kpi-most-missed');
+      if (kpiMissed) {
+        kpiMissed.textContent = data.most_missed_ppe || '-';
+      }
     } catch (err) {
       console.error("Stats refresh error", err);
     }
@@ -384,12 +391,7 @@
   async function startDetection() {
     const camSelect = document.getElementById('camera-select');
     const camId = camSelect ? camSelect.value : null;
-
     const statusPill = document.getElementById('stream-status-pill');
-    if (statusPill) {
-      statusPill.textContent = 'Active Tracking';
-      statusPill.className = 'px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200';
-    }
 
     try {
       const res = await fetch('/start_detection', {
@@ -398,10 +400,26 @@
         body: JSON.stringify({ camera_id: camId })
       });
       const data = await res.json();
-      showToast(data.message, 'success');
+      if (res.ok && data.status === 'success') {
+        if (statusPill) {
+          statusPill.textContent = 'Active Tracking';
+          statusPill.className = 'px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200';
+        }
+        showToast(data.message, 'success');
+      } else {
+        if (statusPill) {
+          statusPill.textContent = 'Standby';
+          statusPill.className = 'px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-semibold border border-slate-200';
+        }
+        showToast(data.message || 'Failed to start detection', 'danger');
+      }
 
-      if (camSelect && camSelect.options[camSelect.selectedIndex]) {
-        document.getElementById('video-feed-title').textContent = camSelect.options[camSelect.selectedIndex].text;
+      if (camSelect && camSelect.options && camSelect.selectedIndex >= 0) {
+        const selOpt = camSelect.options[camSelect.selectedIndex];
+        if (selOpt) {
+          const titleEl = document.getElementById('video-feed-title');
+          if (titleEl) titleEl.textContent = selOpt.text;
+        }
       }
 
       setTimeout(() => {
@@ -409,8 +427,14 @@
         if (feed) {
           feed.src = '/video_feed?t=' + Date.now();
         }
+        const skel = document.getElementById('video-skeleton');
+        if (skel) skel.style.opacity = '0';
       }, 400);
     } catch (e) {
+      if (statusPill) {
+        statusPill.textContent = 'Standby';
+        statusPill.className = 'px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-semibold border border-slate-200';
+      }
       showToast("Failed to start detection", 'danger');
     }
   }
@@ -420,7 +444,11 @@
     try {
       const res = await fetch('/stop_detection', { method: 'POST' });
       const data = await res.json();
-      showToast(data.message, 'info');
+      if (res.ok && data.status === 'success') {
+        showToast(data.message, 'info');
+      } else {
+        showToast(data.message || 'Failed to stop detection', 'danger');
+      }
 
       const statusPill = document.getElementById('stream-status-pill');
       if (statusPill) {
@@ -483,7 +511,7 @@
               }
             });
 
-            if (newlyAddedCam) {
+            if (newlyAddedCam && !isInitial) {
               showToast(`📷 New webcam detected: ${newlyAddedCam.name}!`, 'success');
             }
           }
@@ -512,12 +540,12 @@
   }
 
   {% if current_user.is_admin and not demo_mode %}
-  setInterval(() => checkWebcamsAuto(false), 10000);
-  document.getElementById('camera-select')?.addEventListener('focus', () => checkWebcamsAuto(false));
-  document.getElementById('camera-select')?.addEventListener('mousedown', () => checkWebcamsAuto(false));
   document.getElementById('camera-select')?.addEventListener('change', async function() {
-    const selectedText = this.options[this.selectedIndex].text;
-    document.getElementById('video-feed-title').textContent = selectedText;
+    if (this.selectedIndex >= 0 && this.options[this.selectedIndex]) {
+      const selectedText = this.options[this.selectedIndex].text;
+      const titleEl = document.getElementById('video-feed-title');
+      if (titleEl) titleEl.textContent = selectedText;
+    }
     await startDetection();
   });
   {% endif %}
