@@ -32,7 +32,7 @@ class Setting(db.Model):
         return item.value if item else default
 
     @classmethod
-    def set_value(cls, key: str, value: str, description: Optional[str] = None):
+    def set_value(cls, key: str, value: Any, description: Optional[str] = None):
         """Upsert a setting value."""
         item = cls.query.filter_by(key=key).first()
         if item:

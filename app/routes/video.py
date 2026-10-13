@@ -89,10 +89,10 @@ def upload_video():
         return jsonify({"status": "error", "message": "No file uploaded"}), 400
 
     file = request.files["video"]
-    if file.filename == "":
+    if not file.filename:
         return jsonify({"status": "error", "message": "No file selected"}), 400
 
-    if file and allowed_file(file.filename):
+    if allowed_file(file.filename):
         filename = secure_filename(file.filename)
         upload_folder = Path(current_app.config["UPLOAD_FOLDER"])
         upload_folder.mkdir(parents=True, exist_ok=True)

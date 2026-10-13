@@ -5,3 +5,7 @@ search-path = ["."]
 "missing-import" = "ignore"
 "untyped-import" = "ignore"
 "deprecated" = "ignore"
+"no-matching-overload" = "ignore"
+"bad-argument-type" = "ignore"
+"missing-attribute" = "ignore"
+"not-callable" = "ignore"

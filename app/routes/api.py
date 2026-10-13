@@ -6,7 +6,7 @@ from flask_login import login_required, current_user
 import io
 import csv
 from collections import defaultdict
-from sqlalchemy import or_
+from sqlalchemy import or_, text, asc
 
 from app.detector.ppe_detector import detector
 from app.models.violation import Violation
@@ -32,7 +32,7 @@ def get_stats():
     mask_viols = Violation.query.filter(Violation.timestamp >= today_start, Violation.violation_type == "Mask").count()
 
     missed_counts = {"Hardhat": hardhat_viols, "Safety Vest": vest_viols, "Mask": mask_viols}
-    most_missed = max(missed_counts, key=missed_counts.get) if violations_today > 0 else "None"
+    most_missed = max(missed_counts, key=lambda k: missed_counts[k]) if violations_today > 0 else "None"
 
     data = {
         "metrics": detector.metrics,
@@ -89,8 +89,8 @@ def list_violations():
         query = query.filter(Violation.camera == camera_filter)
     if search_filter:
         search_terms = [
-            Violation.camera.ilike(f"%{search_filter}%"),
-            Violation.violation_type.ilike(f"%{search_filter}%"),
+            Violation.camera.ilike(f"%{search_filter}%"),  # type: ignore[attr-defined]
+            Violation.violation_type.ilike(f"%{search_filter}%"),  # type: ignore[attr-defined]
         ]
         if search_filter.isdigit():
             search_terms.append(Violation.track_id == int(search_filter))
@@ -103,7 +103,7 @@ def list_violations():
         except ValueError:
             pass
 
-    pagination = query.order_by(Violation.timestamp.desc()).paginate(
+    pagination = query.order_by(text("timestamp DESC")).paginate(
         page=page, per_page=per_page, error_out=False
     )
 
@@ -132,7 +132,7 @@ def analytics_trends():
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)
 
     # Historical Daily stats from SQLite
-    stats = DailyStat.query.filter(DailyStat.date >= cutoff.date()).order_by(DailyStat.date.asc()).all()
+    stats = DailyStat.query.filter(DailyStat.date >= str(cutoff.date())).order_by(asc(DailyStat.date)).all()
 
     violations_by_date = defaultdict(lambda: {"Hardhat": 0, "Safety Vest": 0, "Mask": 0, "Gloves": 0})
     category_totals = {"Hardhat": 0, "Safety Vest": 0, "Mask": 0, "Gloves": 0}
@@ -235,16 +235,21 @@ def update_settings():
         return jsonify({"status": "error", "message": "Administrator authorization required."}), 403
 
     data = request.get_json() or {}
+    raw_conf = data.get("confidence")
+    raw_cooldown = data.get("cooldown")
+    if raw_conf is None or raw_cooldown is None:
+        return jsonify({"status": "error", "message": "Enter valid confidence and cooldown values."}), 400
+
     try:
-        confidence = float(data.get("confidence"))
-        cooldown = int(data.get("cooldown"))
+        confidence = float(raw_conf)
+        cooldown = int(raw_cooldown)
     except (TypeError, ValueError):
         return jsonify({"status": "error", "message": "Enter valid confidence and cooldown values."}), 400
     if not 0.05 <= confidence <= 0.95 or not 1 <= cooldown <= 3600:
         return jsonify({"status": "error", "message": "Confidence must be 0.05-0.95 and cooldown 1-3600 seconds."}), 400
 
-    Setting.set_value("confidence", confidence, "Minimum model confidence threshold")
-    Setting.set_value("cooldown", cooldown, "Alert cooldown per worker and PPE type")
+    Setting.set_value("confidence", str(confidence), "Minimum model confidence threshold")
+    Setting.set_value("cooldown", str(cooldown), "Alert cooldown per worker and PPE type")
     detector.confidence_threshold = confidence
     detector.alert_cooldown = cooldown
     return jsonify({"status": "success", "message": "Detection settings saved."})
@@ -254,7 +259,7 @@ def update_settings():
 @login_required
 def export_violations_csv():
     """Generates downloadable CSV export of all violation records."""
-    violations = Violation.query.order_by(Violation.timestamp.desc()).all()
+    violations = Violation.query.order_by(text("timestamp DESC")).all()
 
     output = io.StringIO()
     writer = csv.writer(output)

@@ -362,9 +362,15 @@ class PPEDetector:
                         time.sleep(0.05)
                         continue
 
+                self._ensure_model()
+                model = self.model
+                if model is None:
+                    time.sleep(0.05)
+                    continue
+
                 # Run YOLO tracking with ByteTrack (or fallback to detection if tracker fails)
                 try:
-                    results = self.model.track(
+                    results = model.track(
                         source=frame,
                         stream=True,
                         persist=True,
@@ -372,8 +378,8 @@ class PPEDetector:
                         conf=self.confidence_threshold,
                         verbose=False,
                     )
-                except Exception as track_err:
-                    results = self.model(
+                except Exception:
+                    results = model(
                         source=frame,
                         stream=True,
                         conf=self.confidence_threshold,
@@ -394,8 +400,9 @@ class PPEDetector:
                         cv2.addWeighted(overlay, 0.15, annotated, 0.85, 0, annotated)
 
                     # 1. Parse Person Boxes
-                    if result.boxes is not None:
-                        for b in result.boxes:
+                    res_boxes = getattr(result, "boxes", None)
+                    if res_boxes is not None:
+                        for b in res_boxes:
                             cls = int(b.cls[0])
                             label = self.CLASS_NAMES[cls] if cls < len(self.CLASS_NAMES) else "Unknown"
                             raw_id = int(b.id[0]) if (b.id is not None) else 1
@@ -427,8 +434,8 @@ class PPEDetector:
                                             cv2.FONT_HERSHEY_SIMPLEX, 0.55, COLOR_PERSON, 2)
 
                     # 2. Parse PPE and Non-Compliance detections
-                    if result.boxes is not None:
-                        for b in result.boxes:
+                    if res_boxes is not None:
+                        for b in res_boxes:
                             cls = int(b.cls[0])
                             label = self.CLASS_NAMES[cls] if cls < len(self.CLASS_NAMES) else "Unknown"
                             if label not in self.PPE_ITEMS and label not in self.NO_PPE_MAP:
