@@ -1,4 +1,6 @@
 {
   "python.analysis.extraPaths": ["."],
-  "python.autoComplete.extraPaths": ["."]
+  "python.autoComplete.extraPaths": ["."],
+  "python.defaultInterpreterPath": "C:\\Python314\\python.exe"
 }
+

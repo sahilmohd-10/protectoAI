@@ -1,0 +1,5 @@
+# Pyrefly Configuration for Protecto.AI
+search-path = ["."]
+
+[diagnostics]
+"missing-import" = "ignore"

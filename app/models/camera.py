@@ -73,8 +73,9 @@ class Camera(db.Model):
         # 1. Try DirectShow enumeration (Instant, no device lock, gets real hardware name)
         if os.name == 'nt':
             try:
-                from pygrabber.dshow_graph import FilterGraph
-                graph = FilterGraph()
+                import importlib
+                dshow_graph = importlib.import_module("pygrabber.dshow_graph")
+                graph = dshow_graph.FilterGraph()
                 dev_names = graph.get_input_devices()
                 for idx, name in enumerate(dev_names):
                     detected.append((idx, name))

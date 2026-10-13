@@ -9,6 +9,8 @@ python-dotenv>=1.0.0
 requests>=2.31.0
 pandas>=2.0.0
 schedule>=1.2.0
+pygrabber>=0.2; sys_platform == 'win32'
+comtypes>=1.1.7; sys_platform == 'win32'
 
 # Computer Vision & Machine Learning
 opencv-python>=4.8.0
