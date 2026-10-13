@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% from "_page_visual.html" import page_visual %}
+
+{% block title %}Detection Settings | Protecto{% endblock %}
+{% block content %}
+{{ page_visual('05', 'DETECTION PROFILE', 'Detection settings', 'Tune detector sensitivity and incident repeat timing for this site.', 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1400&q=85', 'Technician working with equipment in an industrial setting', 'ACCESS', 'Admin controlled') }}
+<div class="space-y-6">
+  <section class="ppe-coverage-strip" aria-label="Equipment monitored by this detector">
+    <div class="ppe-coverage-heading"><span>MODEL COVERAGE</span><i data-lucide="scan-eye" class="h-4 w-4"></i></div>
+    <div class="ppe-coverage-items">
+      <div class="ppe-coverage-item ppe-hardhat"><i data-lucide="hard-hat" class="h-5 w-5"></i><span>Head protection</span></div>
+      <div class="ppe-coverage-item ppe-vest"><i data-lucide="shirt" class="h-5 w-5"></i><span>High-vis vest</span></div>
+      <div class="ppe-coverage-item ppe-mask"><i data-lucide="scan-face" class="h-5 w-5"></i><span>Face covering</span></div>
+      <div class="ppe-coverage-item ppe-gloves"><i data-lucide="hand" class="h-5 w-5"></i><span>Gloves</span></div>
+    </div>
+  </section>
+
+  <form id="settings-form" class="max-w-3xl space-y-5">
+    <section class="wix-card divide-y divide-slate-100">
+      <div class="p-5 sm:p-6">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div class="max-w-xl">
+            <h2 class="text-sm font-semibold text-slate-900">Minimum confidence</h2>
+            <p class="mt-1 text-sm text-slate-600">Detections below this confidence score are ignored. Higher values reduce uncertain alerts but may miss harder-to-see equipment.</p>
+          </div>
+          <label class="flex items-center gap-2 text-sm font-semibold text-slate-900">
+            <input id="confidence-value" type="number" min="0.05" max="0.95" step="0.05" value="{{ settings.confidence|float }}" {% if not current_user.is_admin %}disabled{% endif %} class="w-24 rounded border border-slate-300 px-2.5 py-2 text-right font-mono text-sm disabled:bg-slate-100">
+            <span class="text-slate-500">score</span>
+          </label>
+        </div>
+        <input id="confidence-range" type="range" min="0.05" max="0.95" step="0.05" value="{{ settings.confidence|float }}" {% if not current_user.is_admin %}disabled{% endif %} class="mt-5 w-full accent-emerald-800">
+        <div class="mt-1 flex justify-between font-mono text-[11px] text-slate-500"><span>0.05 · more detections</span><span>0.95 · fewer, stronger detections</span></div>
+      </div>
+
+      <div class="p-5 sm:p-6">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div class="max-w-xl">
+            <h2 class="text-sm font-semibold text-slate-900">Alert cooldown</h2>
+            <p class="mt-1 text-sm text-slate-600">Minimum time before the same worker and PPE issue can create another violation record.</p>
+          </div>
+          <label class="flex items-center gap-2 text-sm font-semibold text-slate-900">
+            <input id="cooldown-value" type="number" min="1" max="3600" step="1" value="{{ settings.cooldown|int }}" {% if not current_user.is_admin %}disabled{% endif %} class="w-24 rounded border border-slate-300 px-2.5 py-2 text-right font-mono text-sm disabled:bg-slate-100">
+            <span class="text-slate-500">seconds</span>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    {% if current_user.is_admin %}
+    <div class="flex items-center justify-end gap-3">
+      <span id="settings-status" class="text-sm text-slate-600" role="status"></span>
+      <button type="submit" class="btn-pill-blue text-sm"><i data-lucide="save" class="h-4 w-4"></i>Save settings</button>
+    </div>
+    {% else %}
+    <p class="text-sm text-slate-500">Only administrators can change detection settings.</p>
+    {% endif %}
+  </form>
+</div>
+
+<script>
+  const confidenceRange = document.getElementById('confidence-range');
+  const confidenceValue = document.getElementById('confidence-value');
+  confidenceRange?.addEventListener('input', () => { confidenceValue.value = confidenceRange.value; });
+  confidenceValue?.addEventListener('input', () => { confidenceRange.value = confidenceValue.value; });
+
+  document.getElementById('settings-form')?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const status = document.getElementById('settings-status');
+    status.textContent = 'Saving…';
+    try {
+      const response = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          confidence: Number(confidenceValue.value),
+          cooldown: Number(document.getElementById('cooldown-value').value)
+        })
+      });
+      const result = await response.json();
+      status.textContent = result.message;
+      status.className = `text-sm ${response.ok ? 'text-emerald-800' : 'text-rose-700'}`;
+      if (response.ok) showToast(result.message, 'success');
+    } catch (error) {
+      status.textContent = 'Could not save settings. Check the connection and try again.';
+      status.className = 'text-sm text-rose-700';
+    }
+  });
+</script>
+{% endblock %}

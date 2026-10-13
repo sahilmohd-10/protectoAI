@@ -1,0 +1,414 @@
+{% extends "base.html" %}
+{% from "_page_visual.html" import page_visual %}
+
+{% block title %}Analytics & Trends — Protecto.AI{% endblock %}
+{% block page_title %}Analytics{% endblock %}
+
+{% block content %}
+{{ page_visual('02', 'REPORTING', 'Safety trends', 'Incident history and protective equipment patterns across monitored cameras.', 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=1400&q=85', 'Architectural plan for a construction project', 'TIME RANGE', 'All recorded history') }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<div class="space-y-6">
+
+  <!-- Header & Filter Bar -->
+  <div class="flex justify-end pb-1">
+
+    <!-- Date Filter Presets (Today / 7d / 30d / All time) -->
+    <div class="inline-flex p-1 rounded-lg bg-surface border border-borderSubtle text-xs font-mono">
+      <button onclick="setFilter(1, this)" id="btn-filter-1"
+              class="px-3 py-1 rounded text-textSecondary hover:text-textPrimary transition-colors filter-btn">
+        Today
+      </button>
+      <button onclick="setFilter(7, this)" id="btn-filter-7"
+              class="px-3 py-1 rounded text-textSecondary hover:text-textPrimary transition-colors filter-btn">
+        7d
+      </button>
+      <button onclick="setFilter(30, this)" id="btn-filter-30"
+              class="px-3 py-1 rounded text-textSecondary hover:text-textPrimary transition-colors filter-btn">
+        30d
+      </button>
+            <button onclick="setFilter(3650, this)" id="btn-filter-all"
+              class="px-3 py-1 rounded bg-accent text-white font-medium filter-btn shadow-sm">
+        All
+      </button>
+    </div>
+  </div>
+
+  <!-- Summary KPI Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div class="saas-card p-4">
+      <div class="flex items-center justify-between text-textSecondary mb-2">
+        <span class="text-xs font-medium">Recorded incidents</span>
+        <div class="w-6 h-6 rounded-md bg-red-500/10 text-red-400 flex items-center justify-center">
+          <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
+        </div>
+      </div>
+      <div class="text-3xl font-extrabold font-tabular text-textPrimary tracking-tight" id="stat-total-violations">--</div>
+      <div class="text-[11px] text-textTertiary mt-2 font-mono flex items-center justify-between">
+        <span>Aggregated across all feeds</span>
+        <span class="text-red-400">Recorded</span>
+      </div>
+    </div>
+
+    <div class="saas-card p-4">
+      <div class="flex items-center justify-between text-textSecondary mb-2">
+        <span class="text-xs font-medium">Average compliance</span>
+        <div class="w-6 h-6 rounded-md bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+          <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+        </div>
+      </div>
+      <div class="text-3xl font-extrabold font-tabular text-emerald-400 tracking-tight" id="stat-avg-compliance">--%</div>
+      <div class="text-[11px] text-textTertiary mt-2 font-mono flex items-center justify-between">
+        <span>Site-wide benchmark</span>
+        <span class="text-emerald-400">Target 95%</span>
+      </div>
+    </div>
+
+    <div class="saas-card p-4">
+      <div class="flex items-center justify-between text-textSecondary mb-2">
+        <span class="text-xs font-medium">Days recorded</span>
+        <div class="w-6 h-6 rounded-md bg-accent/10 text-accent flex items-center justify-center">
+          <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+        </div>
+      </div>
+      <div class="text-3xl font-extrabold font-tabular text-textPrimary tracking-tight" id="stat-days-logged">--</div>
+      <div class="text-[11px] text-textTertiary mt-2 font-mono flex items-center justify-between">
+        <span>Active monitoring span</span>
+        <span class="text-accent">Historical</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Primary Charts Row (Line 8 cols, Donut 4 cols) -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- Timeline Trends Line Chart (8 cols) -->
+    <div class="lg:col-span-8 saas-card p-4 space-y-3">
+      <div class="flex items-center justify-between pb-2.5 border-b border-borderSubtle">
+        <div class="flex items-center gap-2">
+          <i data-lucide="trending-up" class="w-4 h-4 text-accent"></i>
+          <span class="font-semibold text-textPrimary text-xs">Daily compliance and incidents</span>
+        </div>
+        <span class="text-[10px] font-mono text-textTertiary">Dual-axis view</span>
+      </div>
+      <div class="relative h-[300px]">
+        <canvas id="timelineChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Category Share Doughnut Chart (4 cols) -->
+    <div class="lg:col-span-4 saas-card p-4 space-y-3">
+      <div class="flex items-center justify-between pb-2.5 border-b border-borderSubtle">
+        <div class="flex items-center gap-2">
+          <i data-lucide="pie-chart" class="w-4 h-4 text-amber-400"></i>
+          <span class="font-semibold text-textPrimary text-xs">Share by PPE Item</span>
+        </div>
+      </div>
+      <div class="relative h-[250px] flex items-center justify-center">
+        <canvas id="donutChart"></canvas>
+      </div>
+      <div class="pt-2 border-t border-borderSubtle text-center text-[11px] text-textTertiary">
+        Hardhat and Safety Vest compose primary safety alerts
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 7x24 Heatmap Grid: Hour x Weekday -->
+  <div class="saas-card p-4 space-y-3">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-borderSubtle">
+      <div class="flex items-center gap-2">
+        <i data-lucide="grid" class="w-4 h-4 text-accent"></i>
+        <span class="font-semibold text-textPrimary text-xs">Violation Risk Heatmap (Weekday × Hour of Day)</span>
+      </div>
+      <div class="flex items-center gap-3 text-[11px] font-mono text-textTertiary">
+        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-surface border border-borderSubtle"></span> 0</span>
+        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-accent/25"></span> Low</span>
+        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-amber-500/50"></span> Medium</span>
+        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-red-500/80"></span> High</span>
+      </div>
+    </div>
+
+    <!-- Heatmap Table Container -->
+    <div class="overflow-x-auto pt-2">
+      <div class="min-w-[700px]">
+        <!-- Hours Header (00 to 23) -->
+        <div class="grid grid-cols-[60px_repeat(24,1fr)] gap-1 text-[10px] font-mono text-textTertiary mb-1.5 text-center">
+          <div></div>
+          {% for h in range(24) %}
+            <div>{{ "%02d"|format(h) }}</div>
+          {% endfor %}
+        </div>
+
+        <!-- 7 Days Grid -->
+        <div id="heatmap-grid" class="space-y-1">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stacked Category Breakdown by Date -->
+  <div class="saas-card p-4 space-y-3">
+    <div class="flex items-center justify-between pb-2.5 border-b border-borderSubtle">
+      <div class="flex items-center gap-2">
+        <i data-lucide="bar-chart-2" class="w-4 h-4 text-accent"></i>
+        <span class="font-semibold text-textPrimary text-xs">Itemized Non-Compliance Distribution</span>
+      </div>
+      <span class="text-[10px] font-mono text-textTertiary">Stacked totals</span>
+    </div>
+    <div class="relative h-[270px]">
+      <canvas id="categoryBarChart"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let timelineChartInstance = null;
+  let donutChartInstance = null;
+  let categoryBarChartInstance = null;
+
+  function setFilter(days, btn) {
+    document.querySelectorAll('.filter-btn').forEach(b => {
+      b.classList.remove('bg-accent', 'text-white', 'font-medium', 'shadow-sm');
+      b.classList.add('text-textSecondary');
+    });
+    btn.classList.add('bg-accent', 'text-white', 'font-medium', 'shadow-sm');
+    btn.classList.remove('text-textSecondary');
+    loadAnalytics(days);
+  }
+
+  async function loadAnalytics(days = 3650) {
+    try {
+      const res = await fetch(`/api/analytics/trends?days=${days}`);
+      const data = await res.json();
+
+      // KPI Cards
+      document.getElementById('stat-total-violations').textContent = data.summary.total_violations;
+      document.getElementById('stat-avg-compliance').textContent = data.summary.avg_compliance + '%';
+      document.getElementById('stat-days-logged').textContent = data.summary.days_recorded;
+
+      renderTimelineChart(data.line_chart);
+      renderDonutChart(data.donut_chart);
+      renderBarChart(data.line_chart);
+      renderHeatmap(data.heatmap);
+    } catch (err) {
+      console.error("Analytics fetch error", err);
+      showToast("Failed to load analytics data", "danger");
+    }
+  }
+
+  function renderTimelineChart(d) {
+    const ctx = document.getElementById('timelineChart').getContext('2d');
+    if (timelineChartInstance) timelineChartInstance.destroy();
+
+    const gradComp = ctx.createLinearGradient(0, 0, 0, 300);
+    gradComp.addColorStop(0, 'rgba(49, 93, 67, 0.15)');
+    gradComp.addColorStop(1, 'rgba(49, 93, 67, 0.0)');
+
+    timelineChartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: d.labels,
+        datasets: [
+          {
+            label: 'Compliance Rate (%)',
+            data: d.compliance,
+            borderColor: '#315d43',
+            backgroundColor: gradComp,
+            fill: true,
+            tension: 0.3,
+            borderWidth: 2,
+            pointRadius: 3,
+            pointBackgroundColor: '#315d43',
+            yAxisID: 'y1',
+          },
+          {
+            label: 'Missing Hardhats',
+            data: d.hardhat,
+            borderColor: '#b75e46',
+            borderDash: [3, 3],
+            tension: 0.3,
+            borderWidth: 1.5,
+            pointRadius: 2,
+            yAxisID: 'y',
+          },
+          {
+            label: 'Missing Vests',
+            data: d.vest,
+            borderColor: '#bd7b2c',
+            borderDash: [3, 3],
+            tension: 0.3,
+            borderWidth: 1.5,
+            pointRadius: 2,
+            yAxisID: 'y',
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: { color: '#4c5951', font: { family: 'Source Sans 3', size: 12 }, boxWidth: 12, usePointStyle: true }
+          },
+          tooltip: {
+            backgroundColor: '#26352d',
+            titleColor: '#fff',
+            bodyColor: '#d7ded8',
+            borderColor: 'rgba(38,53,45,0.2)',
+            borderWidth: 1,
+            padding: 10,
+            cornerRadius: 8,
+            titleFont: { family: 'Source Sans 3', weight: '600' },
+            bodyFont: { family: 'IBM Plex Mono', size: 11 }
+          }
+        },
+        scales: {
+          x: {
+            ticks: { color: '#647168', font: { family: 'IBM Plex Mono', size: 10 } },
+            grid: { color: 'rgba(49,93,67,0.09)' }
+          },
+          y: {
+            type: 'linear',
+            position: 'left',
+            title: { display: true, text: 'Incidents', color: '#647168', font: { size: 10 } },
+            ticks: { color: '#647168', font: { family: 'IBM Plex Mono', size: 10 } },
+            grid: { color: 'rgba(49,93,67,0.09)' }
+          },
+          y1: {
+            type: 'linear',
+            position: 'right',
+            title: { display: true, text: 'Compliance %', color: '#315d43', font: { size: 10 } },
+            ticks: { color: '#315d43', font: { family: 'IBM Plex Mono', size: 10 } },
+            min: 0,
+            max: 100,
+            grid: { drawOnChartArea: false }
+          }
+        }
+      }
+    });
+  }
+
+  function renderDonutChart(d) {
+    const ctx = document.getElementById('donutChart').getContext('2d');
+    if (donutChartInstance) donutChartInstance.destroy();
+
+    donutChartInstance = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: d.labels,
+        datasets: [{
+          data: d.data,
+          backgroundColor: ['#b75e46', '#bd7b2c', '#416f7b', '#315d43'],
+          borderWidth: 0,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '72%',
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { color: '#4c5951', font: { family: 'Source Sans 3', size: 12 }, boxWidth: 10, usePointStyle: true }
+          },
+          tooltip: {
+            backgroundColor: '#26352d',
+            titleColor: '#fff',
+            bodyColor: '#d7ded8',
+            borderColor: 'rgba(38,53,45,0.2)',
+            borderWidth: 1,
+            cornerRadius: 8,
+          }
+        }
+      }
+    });
+  }
+
+  function renderBarChart(d) {
+    const ctx = document.getElementById('categoryBarChart').getContext('2d');
+    if (categoryBarChartInstance) categoryBarChartInstance.destroy();
+
+    categoryBarChartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: d.labels,
+        datasets: [
+          { label: 'Hardhat', data: d.hardhat, backgroundColor: '#b75e46' },
+          { label: 'Vest', data: d.vest, backgroundColor: '#bd7b2c' },
+          { label: 'Mask', data: d.mask, backgroundColor: '#416f7b' }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: '#4c5951', font: { family: 'Source Sans 3', size: 12 }, boxWidth: 10 } }
+        },
+        scales: {
+          x: { stacked: true, ticks: { color: '#647168', font: { family: 'IBM Plex Mono', size: 10 } }, grid: { color: 'rgba(49,93,67,0.07)' } },
+          y: { stacked: true, ticks: { color: '#647168', font: { family: 'IBM Plex Mono', size: 10 } }, grid: { color: 'rgba(49,93,67,0.09)' } }
+        }
+      }
+    });
+  }
+
+  // 7x24 Heatmap Grid Renderer
+  function renderHeatmap(heatmapMatrix) {
+    const grid = document.getElementById('heatmap-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+    // Find max value for color normalization
+    let maxVal = 1;
+    if (heatmapMatrix) {
+      heatmapMatrix.forEach(row => {
+        row.forEach(val => { if (val > maxVal) maxVal = val; });
+      });
+    }
+
+    dayNames.forEach((name, dayIndex) => {
+      const row = document.createElement('div');
+      row.className = 'grid grid-cols-[60px_repeat(24,1fr)] gap-1 items-center';
+
+      let rowHtml = `<div class="text-[11px] font-mono text-textSecondary">${name}</div>`;
+
+      for (let h = 0; h < 24; h++) {
+        const val = heatmapMatrix && heatmapMatrix[dayIndex] ? (heatmapMatrix[dayIndex][h] || 0) : 0;
+        let bgStyle = 'background-color: var(--bg-surface);';
+
+        if (val > 0) {
+          const ratio = val / maxVal;
+          if (ratio > 0.65) {
+            bgStyle = 'background-color: rgba(239, 68, 68, 0.85); color: #fff;';
+          } else if (ratio > 0.35) {
+            bgStyle = 'background-color: rgba(245, 158, 11, 0.65); color: #fff;';
+          } else {
+            bgStyle = 'background-color: rgba(59, 130, 246, 0.45); color: #fff;';
+          }
+        }
+
+        rowHtml += `
+          <div class="h-6 rounded-sm border border-borderSubtle flex items-center justify-center text-[10px] font-mono transition-transform hover:scale-110 cursor-pointer group relative"
+               style="${bgStyle}"
+               title="${name} ${h}:00 — ${val} incident(s)">
+            <span class="${val === 0 ? 'hidden' : ''}">${val}</span>
+          </div>
+        `;
+      }
+
+      row.innerHTML = rowHtml;
+      grid.appendChild(row);
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    loadAnalytics(3650);
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  ppe-monitor:
+    build: .
+    container_name: protecto_ai_ppe
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./instance:/app/instance
+      - ./uploads:/app/uploads
+      - ./snapshots:/app/snapshots
+      - ./.env:/app/.env
+    environment:
+      - FLASK_HOST=0.0.0.0
+      - FLASK_PORT=5000
+    restart: unless-stopped

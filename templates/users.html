@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% from "_page_visual.html" import page_visual %}
+
+{% block title %}Team Accounts | Protecto{% endblock %}
+{% block content %}
+{{ page_visual('06', 'ADMINISTRATION', 'People and access', 'Keep site contacts current and assign the right level of workspace access.', 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=1400&q=85', 'Colleagues working together at a table', 'TEAM MEMBERS', users|length) }}
+<div class="space-y-6">
+  <section class="team-summary" aria-label="Team account summary">
+    <div class="team-summary-label"><i data-lucide="shield-check" class="h-4 w-4"></i><span>Admin accounts</span><strong>{{ role_counts.admins }}</strong></div>
+    <div class="team-summary-bar" role="img" aria-label="{{ role_counts.users }} user accounts and {{ role_counts.admins }} admin accounts">
+      <span class="team-bar-users" style="width: {{ (role_counts.users * 100 / users|length)|round|int if users|length else 0 }}%"></span>
+      <span class="team-bar-admins" style="width: {{ (role_counts.admins * 100 / users|length)|round|int if users|length else 0 }}%"></span>
+    </div>
+    <div class="team-summary-label"><i data-lucide="hard-hat" class="h-4 w-4"></i><span>Site users</span><strong>{{ role_counts.users }}</strong></div>
+  </section>
+
+  <section class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+    <div class="wix-card overflow-hidden">
+      <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+        <h2 class="text-sm font-semibold text-slate-900">Registered users</h2>
+        <button type="button" onclick="loadTeamUsers()" class="p-2 text-slate-500 hover:bg-slate-100" title="Refresh users"><i data-lucide="refresh-cw" class="h-4 w-4"></i></button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-slate-50 text-xs uppercase text-slate-500"><tr><th class="px-5 py-3 font-semibold">Account</th><th class="px-5 py-3 font-semibold">Role</th><th class="px-5 py-3 font-semibold">Created</th><th class="px-5 py-3 text-right font-semibold">Action</th></tr></thead>
+          <tbody id="team-users-body" class="divide-y divide-slate-100">
+            {% for member in users %}
+            <tr>
+              <td class="px-5 py-3.5"><div class="team-member"><span class="team-member-initial">{{ (member.full_name or member.username)[0]|upper }}</span><div><div class="font-semibold text-slate-900">{{ member.full_name or member.username }}</div><div class="text-xs text-slate-600">{{ member.username }}{% if member.site_name %} · {{ member.site_name }}{% endif %}</div><div class="text-xs text-slate-500">{{ member.email or 'No Gmail added' }}{% if member.phone %} · {{ member.phone }}{% endif %}</div></div></div></td>
+              <td class="px-5 py-3.5"><select aria-label="Role for {{ member.username }}" onchange="setTeamRole({{ member.id }}, this.value)" {% if member.id == current_user.id %}disabled{% endif %} class="rounded border border-slate-200 bg-white px-2 py-1 text-xs disabled:bg-slate-100"><option value="user" {% if not member.is_admin %}selected{% endif %}>User</option><option value="admin" {% if member.is_admin %}selected{% endif %}>Admin</option></select></td>
+              <td class="px-5 py-3.5 text-xs text-slate-600">{{ member.created_at.strftime('%b %d, %Y') if member.created_at else '—' }}</td>
+              <td class="px-5 py-3.5 text-right">
+                {% if member.id != current_user.id %}<button type="button" onclick="removeTeamUser({{ member.id }}, {{ member.username|tojson }})" class="p-2 text-slate-500 hover:bg-rose-50 hover:text-rose-700" title="Delete account"><i data-lucide="user-round-x" class="h-4 w-4"></i></button>{% else %}<span class="text-xs text-slate-400">You</span>{% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="px-5 py-10 text-center text-sm text-slate-500">No team accounts yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <form id="create-user-form" class="wix-card h-fit space-y-4 p-5">
+      <div><h2 class="text-sm font-semibold text-slate-900">Add account</h2><p class="mt-1 text-xs text-slate-500">Add the team member's contact and worksite details before assigning access.</p></div>
+      <label class="block text-xs font-semibold text-slate-700">Full name<input id="new-full-name" minlength="2" maxlength="120" required autocomplete="name" class="mt-1.5 w-full rounded border border-slate-300 px-3 py-2.5 text-sm font-normal"></label>
+      <label class="block text-xs font-semibold text-slate-700">Username<input id="new-username" minlength="3" required autocomplete="off" class="mt-1.5 w-full rounded border border-slate-300 px-3 py-2.5 text-sm font-normal"></label>
+      <label class="block text-xs font-semibold text-slate-700">Gmail address<input id="new-email" type="email" pattern="[A-Za-z0-9._%+-]+@gmail\.com" required autocomplete="email" placeholder="you@gmail.com" class="mt-1.5 w-full rounded border border-slate-300 px-3 py-2.5 text-sm font-normal"></label>
+      <label class="block text-xs font-semibold text-slate-700">Phone number<input id="new-phone" type="tel" pattern="\+?[1-9][0-9\s().-]{7,22}" maxlength="24" required autocomplete="tel" placeholder="+1 555 123 4567" class="mt-1.5 w-full rounded border border-slate-300 px-3 py-2.5 text-sm font-normal"></label>
+      <label class="block text-xs font-semibold text-slate-700">Worksite or project<input id="new-site-name" minlength="2" maxlength="120" required autocomplete="organization" class="mt-1.5 w-full rounded border border-slate-300 px-3 py-2.5 text-sm font-normal"></label>
+      <label class="block text-xs font-semibold text-slate-700">Temporary password<input id="new-password" type="password" minlength="8" required autocomplete="new-password" class="mt-1.5 w-full rounded border border-slate-300 px-3 py-2.5 text-sm font-normal"></label>
+      <fieldset>
+        <legend class="text-xs font-semibold text-slate-700">Account role</legend>
+        <div class="mt-2 grid grid-cols-2 gap-2">
+          <label class="cursor-pointer">
+            <input type="radio" name="new-role" value="user" checked class="peer sr-only">
+            <span class="block rounded border border-slate-200 p-3 peer-checked:border-emerald-700 peer-checked:bg-emerald-50">
+              <span class="block text-sm font-semibold text-slate-900">User</span>
+              <span class="mt-1 block text-xs leading-snug text-slate-500">Review feeds and records</span>
+            </span>
+          </label>
+          <label class="cursor-pointer">
+            <input type="radio" name="new-role" value="admin" class="peer sr-only">
+            <span class="block rounded border border-slate-200 p-3 peer-checked:border-emerald-700 peer-checked:bg-emerald-50">
+              <span class="block text-sm font-semibold text-slate-900">Admin</span>
+              <span class="mt-1 block text-xs leading-snug text-slate-500">Manage site controls</span>
+            </span>
+          </label>
+        </div>
+      </fieldset>
+      <p id="create-user-status" class="text-xs text-slate-600" role="status"></p>
+      <button type="submit" class="btn-pill-blue w-full text-sm"><i data-lucide="user-plus" class="h-4 w-4"></i>Create account</button>
+    </form>
+  </section>
+</div>
+
+<script>
+  document.getElementById('create-user-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const status = document.getElementById('create-user-status');
+    status.textContent = 'Creating account…';
+    try {
+      const response = await fetch('/auth/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: document.getElementById('new-username').value.trim(),
+          full_name: document.getElementById('new-full-name').value.trim(),
+          email: document.getElementById('new-email').value.trim(),
+          phone: document.getElementById('new-phone').value.trim(),
+          site_name: document.getElementById('new-site-name').value.trim(),
+          password: document.getElementById('new-password').value,
+          role: document.querySelector('input[name="new-role"]:checked').value
+        })
+      });
+      const result = await response.json();
+      status.textContent = result.message;
+      status.className = `text-xs ${response.ok ? 'text-emerald-800' : 'text-rose-700'}`;
+      if (response.ok) location.reload();
+    } catch (error) {
+      status.textContent = 'Could not create the account. Check the connection and try again.';
+      status.className = 'text-xs text-rose-700';
+    }
+  });
+
+  async function removeTeamUser(userId, username) {
+    if (!confirm(`Delete the account for ${username}?`)) return;
+    try {
+      const response = await fetch(`/auth/api/users/${userId}`, { method: 'DELETE' });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message);
+      showToast(result.message, 'success');
+      location.reload();
+    } catch (error) {
+      showToast(error.message || 'Could not delete this account.', 'danger');
+    }
+  }
+
+  async function setTeamRole(userId, role) {
+    try {
+      const response = await fetch(`/auth/api/users/${userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role })
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message);
+      showToast(result.message, 'success');
+    } catch (error) {
+      showToast(error.message || 'Could not update this role.', 'danger');
+      location.reload();
+    }
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,584 @@
+{% extends "base.html" %}
+{% from "_page_visual.html" import page_visual %}
+
+{% block title %}Protecto.AI — Live PPE Monitoring Console{% endblock %}
+
+{% block content %}
+{{ page_visual('01', 'LIVE OPERATIONS', 'Live site view', 'Monitor protective equipment and activity on the selected camera feed.', 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=1400&q=85', 'Construction work in progress at a site', 'SAMPLE FEED' if demo_mode else 'CURRENT CAMERA', 'Live inference disabled' if demo_mode else (active_camera.name if active_camera else 'Main stream')) }}
+<div class="space-y-6">
+
+  <!-- Top Action Bar -->
+  <div class="flex flex-wrap items-center justify-between gap-2.5 pb-2">
+    <!-- Left Role Indicator -->
+    <div>
+      {% if current_user.is_admin and not demo_mode %}
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-wixBlue border border-blue-100">
+          <i data-lucide="shield" class="w-3.5 h-3.5"></i>
+          <span>Admin Console</span>
+        </span>
+      {% else %}
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+          <i data-lucide="eye" class="w-3.5 h-3.5 text-slate-500"></i>
+          <span>Live Monitoring (View Only)</span>
+        </span>
+      {% endif %}
+    </div>
+
+    <!-- Right Controls -->
+    <div class="flex flex-wrap items-center gap-2.5">
+      {% if current_user.is_admin and not demo_mode %}
+        <!-- Camera Source Selector (Admin Only) -->
+        <div class="relative">
+          <select id="camera-select"
+              aria-label="Select camera source"
+                  class="bg-white border border-slate-200 text-slate-800 text-xs rounded-full pl-4 pr-9 py-2 focus:outline-none focus:border-wixBlue font-medium shadow-sm appearance-none cursor-pointer">
+            {% for cam in cameras %}
+              <option value="{{ cam.id }}" {% if active_camera and active_camera.id == cam.id %}selected{% endif %}>
+                {{ cam.name }} ({{ cam.source_type }})
+              </option>
+            {% endfor %}
+          </select>
+          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+            <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+          </div>
+        </div>
+
+        <!-- Detect Webcams Button (Admin Only) -->
+        <button type="button" id="btn-detect-cameras" onclick="detectCameras()" title="Scan for attached USB webcams"
+                class="btn-pill-secondary text-xs">
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-slate-500"></i>
+          <span>Scan Cameras</span>
+        </button>
+
+        <!-- Upload Video Modal Trigger (Admin Only) -->
+        <button type="button" onclick="openUploadModal()"
+                class="btn-pill-secondary text-xs">
+          <i data-lucide="upload-cloud" class="w-3.5 h-3.5 text-slate-500"></i>
+          <span>Upload Video</span>
+        </button>
+
+        <!-- Start Detection Button (Admin Only) -->
+        <button type="button" id="btn-start-stream" onclick="startDetection()"
+                class="btn-pill-blue text-xs">
+          <i data-lucide="play" class="w-3.5 h-3.5"></i>
+          <span>Start Detection</span>
+        </button>
+
+        <!-- Stop Detection Button (Admin Only) -->
+        <button type="button" id="btn-stop-stream" onclick="stopDetection()"
+                class="px-4 py-2 rounded-full bg-white hover:bg-rose-50 border border-slate-200 text-rose-600 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm">
+          <i data-lucide="square" class="w-3.5 h-3.5"></i>
+          <span>Stop</span>
+        </button>
+      {% else %}
+        <div class="flex flex-wrap items-center justify-between gap-3 border border-slate-200 bg-white px-4 py-3">
+          <div class="flex items-start gap-3">
+            <i data-lucide="eye" class="mt-0.5 h-4 w-4 shrink-0 text-slate-500"></i>
+            <div>
+              <p class="text-xs font-semibold text-slate-800">{% if demo_mode %}Public demo · sample worksite{% else %}Monitoring {{ active_camera.name if active_camera else "Main Stream" }}{% endif %}</p>
+              <p class="mt-0.5 text-xs text-slate-500">{% if demo_mode %}Sample incidents are shown; live detection and camera controls are disabled on the free demo.{% else %}Camera selection, scanning, and start/stop controls require an Admin account.{% endif %}</p>
+            </div>
+          </div>
+          {% if not demo_mode %}<a href="{{ url_for('auth.logout') }}" class="btn-pill-secondary text-xs">Switch account</a>{% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Streamlined KPI Metrics Grid (Wix Clean Cards) -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+    <!-- Card 1: Violations Today -->
+    <div class="wix-card p-5 flex flex-col justify-between">
+      <div class="flex items-center justify-between text-slate-500 mb-2">
+          <span class="text-xs font-semibold text-slate-600">Incidents today</span>
+        <div class="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+          <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+        </div>
+      </div>
+      <div class="flex items-baseline justify-between mt-1">
+        <span class="text-3xl font-extrabold font-tabular text-slate-900 tracking-tight" id="kpi-violations-today">0</span>
+        <span class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-100">
+          repeat alerts filtered
+        </span>
+      </div>
+      <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-400 font-mono flex items-center justify-between">
+        <span>Total non-compliance events</span>
+        <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-rose-500"></i>
+      </div>
+    </div>
+
+    <!-- Card 2: Overall Compliance Rate -->
+    <div class="wix-card p-5 flex flex-col justify-between">
+      <div class="flex items-center justify-between text-slate-500 mb-2">
+        <span class="text-xs font-semibold text-slate-600">Compliance Rate</span>
+        <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+          <i data-lucide="shield-check" class="w-4 h-4"></i>
+        </div>
+      </div>
+      <div class="flex items-baseline justify-between mt-1">
+        <span class="text-3xl font-extrabold font-tabular text-emerald-600 tracking-tight" id="kpi-compliance-rate">{{ demo_compliance if demo_mode else '100.0' }}%</span>
+        <span class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">
+          Target 95%
+        </span>
+      </div>
+      <div class="mt-4 space-y-1.5">
+        <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+          <div id="kpi-compliance-bar" class="bg-emerald-500 h-2 rounded-full transition-all duration-500" style="width: 100%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 3: Active Workers in Frame -->
+    <div class="wix-card p-5 flex flex-col justify-between">
+      <div class="flex items-center justify-between text-slate-500 mb-2">
+        <span class="text-xs font-semibold text-slate-600">Active Workers</span>
+        <div class="w-8 h-8 rounded-xl bg-blue-50 text-wixBlue flex items-center justify-center">
+          <i data-lucide="users" class="w-4 h-4"></i>
+        </div>
+      </div>
+      <div class="flex items-baseline justify-between mt-1">
+        <span class="text-3xl font-extrabold font-tabular text-slate-900 tracking-tight" id="kpi-active-workers">0</span>
+        <span class="text-xs font-semibold font-mono text-wixBlue px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-100" id="kpi-fps">0.0 FPS</span>
+      </div>
+      <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-400 font-mono flex items-center justify-between">
+        <span>People in the current frame</span>
+        <i data-lucide="crosshair" class="w-3.5 h-3.5 text-wixBlue"></i>
+      </div>
+    </div>
+
+    <!-- Card 4: Top Missed Item -->
+    <div class="wix-card p-5 flex flex-col justify-between">
+      <div class="flex items-center justify-between text-slate-500 mb-2">
+        <span class="text-xs font-semibold text-slate-600">Top Violation Type</span>
+        <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+          <i data-lucide="hard-hat" class="w-4 h-4"></i>
+        </div>
+      </div>
+      <div class="flex items-baseline justify-between mt-1">
+        <span class="text-xl font-bold text-amber-600 truncate" id="kpi-most-missed">-</span>
+        <span class="text-[11px] font-semibold text-slate-400">Risk item</span>
+      </div>
+      <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500 flex items-center justify-between">
+        <span>Repeat alert cooldown active</span>
+        <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-500"></i>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Video Stream Player Card (Full-width Wix Card) -->
+  <div class="wix-card p-5 sm:p-6 space-y-4">
+    <!-- Video Header Strip -->
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+      <div class="flex items-center gap-2.5">
+        <span class="rec-dot"></span>
+        <span class="font-bold text-slate-900 text-sm" id="video-feed-title">
+          {{ active_camera.name if active_camera else "Live Stream Camera" }}
+        </span>
+      </div>
+
+      <div class="flex items-center gap-2 text-xs font-mono">
+        <span id="stream-status-pill" class="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-semibold border border-slate-200">
+          {{ 'Sample feed' if demo_mode else 'Standby' }}
+        </span>
+        <button onclick="toggleFullscreen()" class="p-1.5 rounded-full text-slate-400 hover:text-black hover:bg-slate-100 transition-colors" title="Fullscreen">
+          <i data-lucide="maximize" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- 16:9 Video Player Frame -->
+    {% if demo_mode %}
+    <div class="relative aspect-video max-h-[640px] mx-auto overflow-hidden bg-slate-950 flex items-center justify-center group" id="video-container">
+      <img src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1600&q=85" alt="Sample construction worksite footage" class="h-full w-full object-cover opacity-70">
+      <div class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/35 text-center text-white">
+        <i data-lucide="play-circle" class="h-10 w-10"></i>
+        <p class="mt-3 font-semibold">Sample worksite view</p>
+        <p class="mt-1 text-xs text-white/80">Live inference is disabled on the free demo</p>
+      </div>
+    </div>
+    {% else %}
+    <div class="relative aspect-video max-h-[640px] mx-auto rounded-2xl overflow-hidden bg-slate-950 flex items-center justify-center shadow-md group" id="video-container">
+      <!-- Skeleton Shimmer Loader -->
+      <div id="video-skeleton" class="absolute inset-0 skeleton flex flex-col items-center justify-center text-slate-400 text-xs font-mono pointer-events-none transition-opacity duration-300">
+        <i data-lucide="video" class="w-8 h-8 mb-2 opacity-40"></i>
+        <span>Connecting video stream...</span>
+      </div>
+
+      <!-- Video Stream -->
+      <img id="live-video-feed"
+           src="{{ url_for('video.video_feed') }}"
+           alt="PPE Live Detection Video Stream"
+           onload="document.getElementById('video-skeleton').style.opacity = '0'"
+           class="w-full h-full object-contain relative z-10">
+    </div>
+    {% endif %}
+
+    <!-- Real-Time Breakdown Chips below video -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-1">
+      <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+        <span class="text-slate-500 font-medium">Hardhats:</span>
+        <span class="text-slate-900 font-bold font-tabular text-sm" id="badge-hardhat-count">-</span>
+      </div>
+      <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+        <span class="text-slate-500 font-medium">Vests:</span>
+        <span class="text-slate-900 font-bold font-tabular text-sm" id="badge-vest-count">-</span>
+      </div>
+      <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+        <span class="text-slate-500 font-medium">Masks:</span>
+        <span class="text-slate-900 font-bold font-tabular text-sm" id="badge-mask-count">-</span>
+      </div>
+      <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+        <span class="text-slate-500 font-medium">Gloves:</span>
+        <span class="text-slate-900 font-bold font-tabular text-sm" id="badge-gloves-count">-</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% if current_user.is_admin and not demo_mode %}
+<!-- Upload Video Modal -->
+<div id="upload-modal" class="cmd-modal-backdrop" onclick="closeUploadModal()">
+  <div class="cmd-dialog p-6 bg-white" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+      <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+        <i data-lucide="upload" class="w-4 h-4 text-wixBlue"></i>
+        <span>Upload Video for Inspection</span>
+      </h3>
+      <button onclick="closeUploadModal()" class="text-slate-400 hover:text-slate-700 p-1">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <form id="upload-form" onsubmit="handleVideoUpload(event)" class="space-y-4">
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 mb-1.5">Camera / Source Label</label>
+        <input type="text" id="upload-camera-name" required
+               class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:outline-none focus:border-wixBlue"
+               placeholder="e.g. Scaffolding Site North">
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 mb-1.5">Select Video File (.mp4, .avi)</label>
+        <input type="file" id="upload-file" accept="video/mp4,video/x-msvideo" required
+               class="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-wixBlue hover:file:bg-blue-100 cursor-pointer">
+      </div>
+
+      <div class="flex items-center gap-2 pt-3">
+        <button type="submit" id="btn-upload-submit"
+                class="btn-pill-blue flex-1 text-xs">
+          <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+          <span>Upload & Analyze</span>
+        </button>
+        <button type="button" onclick="closeUploadModal()"
+                class="btn-pill-secondary text-xs">
+          Cancel
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<script>
+  {% if not demo_mode %}
+  // Server-Sent Events (SSE) Listener for Real-Time Updates
+  const eventSource = new EventSource('/api/live_events');
+
+  eventSource.onmessage = function(event) {
+    try {
+      const payload = JSON.parse(event.data);
+
+      if (payload.type === 'metrics') {
+        const m = payload.data;
+        const activeWorkersEl = document.getElementById('kpi-active-workers');
+        const prevWorkers = parseInt(activeWorkersEl.textContent) || 0;
+        if (m.active_workers !== prevWorkers) {
+          animateValue(activeWorkersEl, prevWorkers, m.active_workers, 300);
+        }
+
+        const compEl = document.getElementById('kpi-compliance-rate');
+        const prevComp = parseFloat(compEl.textContent) || 100;
+        if (Math.abs(m.compliance_rate - prevComp) >= 1.0) {
+          animateValue(compEl, prevComp, m.compliance_rate, 300, true);
+        } else {
+          compEl.textContent = m.compliance_rate.toFixed(1) + '%';
+        }
+
+        const barEl = document.getElementById('kpi-compliance-bar');
+        if (barEl) {
+          barEl.style.width = Math.min(Math.max(m.compliance_rate, 0), 100) + '%';
+          if (m.compliance_rate >= 90) {
+            compEl.className = 'text-3xl font-extrabold font-tabular text-emerald-600 tracking-tight';
+            barEl.className = 'bg-emerald-500 h-2 rounded-full transition-all duration-500';
+          } else if (m.compliance_rate >= 60) {
+            compEl.className = 'text-3xl font-extrabold font-tabular text-amber-500 tracking-tight';
+            barEl.className = 'bg-amber-500 h-2 rounded-full transition-all duration-500';
+          } else {
+            compEl.className = 'text-3xl font-extrabold font-tabular text-rose-500 tracking-tight';
+            barEl.className = 'bg-rose-500 h-2 rounded-full transition-all duration-500';
+          }
+        }
+        document.getElementById('kpi-fps').textContent = m.fps + ' FPS';
+
+        // Update Pill
+        const pill = document.getElementById('stream-status-pill');
+        if (m.is_running) {
+          pill.textContent = 'Active Tracking';
+          pill.className = 'px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200';
+        } else {
+          pill.textContent = 'Standby';
+          pill.className = 'px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-semibold border border-slate-200';
+        }
+
+        // Update breakdown counts
+        if (m.wearing) {
+          document.getElementById('badge-hardhat-count').textContent = (m.wearing['Hardhat'] || 0) + ' ✓';
+          document.getElementById('badge-vest-count').textContent = (m.wearing['Safety Vest'] || 0) + ' ✓';
+          document.getElementById('badge-mask-count').textContent = (m.wearing['Mask'] || 0) + ' ✓';
+          document.getElementById('badge-gloves-count').textContent = (m.wearing['Gloves'] || 0) + ' ✓';
+        }
+      } else if (payload.type === 'violation') {
+        const v = payload.data;
+        handleViolationAlert(v);
+      }
+    } catch (e) {
+      console.error("SSE parse error", e);
+    }
+  };
+  {% endif %}
+
+  // Handle live violation alert
+  function handleViolationAlert(v) {
+    playAlertChime();
+    showToast(`Missing ${v.violation_type} (Track #${v.track_id})`, 'danger');
+
+    // Increment today's count
+    const kpiToday = document.getElementById('kpi-violations-today');
+    if (kpiToday) {
+      const cur = parseInt(kpiToday.textContent || 0);
+      animateValue(kpiToday, cur, cur + 1, 200);
+    }
+  }
+
+  // Periodic fetch of today stats
+  async function refreshTodayStats() {
+    try {
+      const res = await fetch('/api/stats');
+      const data = await res.json();
+      const cur = parseInt(document.getElementById('kpi-violations-today').textContent || 0);
+      if (cur !== data.violations_today) {
+        animateValue(document.getElementById('kpi-violations-today'), cur, data.violations_today, 400);
+      }
+      document.getElementById('kpi-most-missed').textContent = data.most_missed_ppe || '-';
+    } catch (err) {
+      console.error("Stats refresh error", err);
+    }
+  }
+  {% if not demo_mode %}setInterval(refreshTodayStats, 5000);{% endif %}
+  refreshTodayStats();
+
+  // Start Detection
+  async function startDetection() {
+    const camSelect = document.getElementById('camera-select');
+    const camId = camSelect ? camSelect.value : null;
+
+    const statusPill = document.getElementById('stream-status-pill');
+    if (statusPill) {
+      statusPill.textContent = 'Active Tracking';
+      statusPill.className = 'px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200';
+    }
+
+    try {
+      const res = await fetch('/start_detection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ camera_id: camId })
+      });
+      const data = await res.json();
+      showToast(data.message, 'success');
+
+      if (camSelect && camSelect.options[camSelect.selectedIndex]) {
+        document.getElementById('video-feed-title').textContent = camSelect.options[camSelect.selectedIndex].text;
+      }
+
+      setTimeout(() => {
+        const feed = document.getElementById('live-video-feed');
+        if (feed) {
+          feed.src = '/video_feed?t=' + Date.now();
+        }
+      }, 400);
+    } catch (e) {
+      showToast("Failed to start detection", 'danger');
+    }
+  }
+
+  // Stop Detection
+  async function stopDetection() {
+    try {
+      const res = await fetch('/stop_detection', { method: 'POST' });
+      const data = await res.json();
+      showToast(data.message, 'info');
+
+      const statusPill = document.getElementById('stream-status-pill');
+      if (statusPill) {
+        statusPill.textContent = 'Standby';
+        statusPill.className = 'px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-semibold border border-slate-200';
+      }
+
+      setTimeout(() => {
+        const feed = document.getElementById('live-video-feed');
+        if (feed) {
+          feed.src = '/video_feed?t=' + Date.now();
+        }
+      }, 350);
+    } catch (e) {
+      showToast("Failed to stop detection", 'danger');
+    }
+  }
+
+  // Automatic Webcam Hot-Plug Watcher & Dynamic Scanner
+  let lastCameraFingerprint = '';
+
+  async function checkWebcamsAuto(isManual = false) {
+    const btn = document.getElementById('btn-detect-cameras');
+    const origHTML = btn ? btn.innerHTML : '';
+    if (isManual && btn) {
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 text-wixBlue animate-spin"></i><span>Scanning...</span>`;
+      lucide.createIcons();
+    }
+
+    try {
+      const res = await fetch('/api/cameras');
+      const data = await res.json();
+      if (data.status === 'success' && data.cameras) {
+        const fingerprint = data.cameras.map(c => `${c.id}:${c.name}`).join('|');
+        const camSelect = document.getElementById('camera-select');
+        const currentVal = camSelect ? camSelect.value : null;
+
+        if (fingerprint !== lastCameraFingerprint) {
+          const isInitial = (lastCameraFingerprint === '');
+          const prevFingerprint = lastCameraFingerprint;
+          lastCameraFingerprint = fingerprint;
+
+          if (camSelect) {
+            camSelect.innerHTML = '';
+            let newlyAddedCam = null;
+            data.cameras.forEach(cam => {
+              const opt = document.createElement('option');
+              opt.value = cam.id;
+              opt.textContent = `${cam.name} (${cam.source_type})`;
+              if (currentVal && String(cam.id) === String(currentVal)) {
+                opt.selected = true;
+              } else if (!currentVal && cam.id === data.active_camera_id) {
+                opt.selected = true;
+              }
+              camSelect.appendChild(opt);
+
+              if (!isInitial && !prevFingerprint.includes(`${cam.id}:`)) {
+                newlyAddedCam = cam;
+              }
+            });
+
+            if (newlyAddedCam) {
+              showToast(`📷 New webcam detected: ${newlyAddedCam.name}!`, 'success');
+            }
+          }
+
+          if (isManual) {
+            showToast(`Hardware scan complete: ${data.cameras.length} camera(s) available`, 'success');
+          }
+        } else if (isManual) {
+          showToast(`All ${data.cameras.length} camera source(s) up to date`, 'info');
+        }
+      }
+    } catch (e) {
+      if (isManual) showToast('Camera scan encountered an issue', 'danger');
+    } finally {
+      if (isManual && btn) {
+        btn.disabled = false;
+        btn.innerHTML = origHTML;
+        lucide.createIcons();
+      }
+    }
+  }
+
+  // Wrapper for manual button click
+  function detectCameras() {
+    checkWebcamsAuto(true);
+  }
+
+  {% if current_user.is_admin and not demo_mode %}
+  setInterval(() => checkWebcamsAuto(false), 10000);
+  document.getElementById('camera-select')?.addEventListener('focus', () => checkWebcamsAuto(false));
+  document.getElementById('camera-select')?.addEventListener('mousedown', () => checkWebcamsAuto(false));
+  document.getElementById('camera-select')?.addEventListener('change', async function() {
+    const selectedText = this.options[this.selectedIndex].text;
+    document.getElementById('video-feed-title').textContent = selectedText;
+    await startDetection();
+  });
+  {% endif %}
+
+  // Fullscreen video toggle
+  function toggleFullscreen() {
+    const el = document.getElementById('video-container');
+    if (!document.fullscreenElement) {
+      el.requestFullscreen().catch(err => alert(err.message));
+    } else {
+      document.exitFullscreen();
+    }
+  }
+
+  {% if current_user.is_admin and not demo_mode %}
+  // Upload Modal Handlers
+  function openUploadModal() {
+    const modal = document.getElementById('upload-modal');
+    if (modal) modal.classList.add('active');
+  }
+  function closeUploadModal() {
+    const modal = document.getElementById('upload-modal');
+    if (modal) modal.classList.remove('active');
+  }
+
+  async function handleVideoUpload(e) {
+    e.preventDefault();
+    const name = document.getElementById('upload-camera-name').value;
+    const fileInput = document.getElementById('upload-file');
+    if (!fileInput.files[0]) return;
+
+    const formData = new FormData();
+    formData.append('camera_name', name);
+    formData.append('video', fileInput.files[0]);
+    formData.append('auto_start', 'true');
+
+    const btn = document.getElementById('btn-upload-submit');
+    btn.disabled = true;
+    btn.innerHTML = `<span>Uploading...</span>`;
+
+    try {
+      const res = await fetch('/upload_video', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        showToast(data.message, 'success');
+        closeUploadModal();
+        setTimeout(() => window.location.reload(), 800);
+      } else {
+        showToast(data.message, 'danger');
+      }
+    } catch (err) {
+      showToast("Upload failed", 'danger');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `<i data-lucide="upload" class="w-3.5 h-3.5"></i><span>Upload & Analyze</span>`;
+      lucide.createIcons();
+    }
+  }
+  {% endif %}
+</script>
+{% endblock %}

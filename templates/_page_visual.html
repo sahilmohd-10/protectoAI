@@ -1,0 +1,14 @@
+{% macro page_visual(index, section, title, description, image, image_alt, detail_label, detail_value) -%}
+<section class="page-visual page-visual-{{ index }} -mx-4 -mt-4 mb-6 sm:-mx-8 sm:-mt-8" aria-label="{{ title }}">
+  <div class="page-visual-photo">
+    <img src="{{ image }}" alt="{{ image_alt }}">
+    <span class="page-visual-photo-caption">{{ section }} / {{ index }}</span>
+  </div>
+  <div class="page-visual-copy">
+    <p class="page-visual-kicker">{{ index }} <span>/</span> {{ section }}</p>
+    <h1>{{ title }}</h1>
+    <p class="page-visual-description">{{ description }}</p>
+    <div class="page-visual-detail"><span>{{ detail_label }}</span><strong>{{ detail_value }}</strong></div>
+  </div>
+</section>
+{%- endmacro %}

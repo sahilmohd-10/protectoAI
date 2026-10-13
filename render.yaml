@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: protecto-safety-demo
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements-demo.txt
+    startCommand: gunicorn --workers 1 --threads 8 --timeout 120 --bind 0.0.0.0:$PORT run:app
+    envVars:
+      - key: DEMO_MODE
+        value: "true"
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true

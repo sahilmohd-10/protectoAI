@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Create Account — Protecto.AI{% endblock %}
+
+{% block content %}
+<section class="auth-layout auth-register -mx-4 -mt-4 sm:-mx-8 sm:-mt-8">
+  <aside class="auth-photo">
+    <img src="https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=1600&q=85" alt="Active construction site with workers and equipment">
+    <div class="auth-photo-shade"></div>
+    <div class="auth-photo-content">
+      <p class="auth-photo-kicker">PROTECTO <span>/</span> NEW ACCOUNT</p>
+      <div class="auth-photo-quote"><span class="auth-rule"></span><p>Every safer shift begins with a team that pays attention.</p></div>
+      <p class="auth-photo-note">SITE SAFETY MONITORING</p>
+    </div>
+  </aside>
+  <div class="auth-panel">
+    <div class="auth-panel-inner">
+      <p class="auth-eyebrow">GET STARTED</p>
+      <h1>Create your account</h1>
+      <p class="auth-intro">Set up your access to the safety workspace.</p>
+      <form method="POST" action="{{ url_for('auth.register') }}" class="auth-form">
+        <div class="auth-field-row">
+          <label class="auth-label" for="full_name">Full name
+            <input class="auth-input" type="text" id="full_name" name="full_name" required minlength="2" maxlength="120" autocomplete="name" placeholder="Your name">
+          </label>
+          <label class="auth-label" for="username">Username
+            <input class="auth-input" type="text" id="username" name="username" required autofocus minlength="3" autocomplete="username" placeholder="Choose a username">
+          </label>
+        </div>
+        <div class="auth-field-row">
+          <label class="auth-label" for="email">Gmail address
+            <input class="auth-input" type="email" id="email" name="email" required pattern="[A-Za-z0-9._%+-]+@gmail\.com" autocomplete="email" placeholder="you@gmail.com">
+          </label>
+          <label class="auth-label" for="phone">Phone number
+            <input class="auth-input" type="tel" id="phone" name="phone" required pattern="\+?[1-9][0-9\s().-]{7,22}" maxlength="24" autocomplete="tel" placeholder="+1 555 123 4567">
+          </label>
+        </div>
+        <label class="auth-label" for="site_name">Worksite or project
+          <input class="auth-input" type="text" id="site_name" name="site_name" required minlength="2" maxlength="120" autocomplete="organization" placeholder="Project or site name">
+        </label>
+        <div class="auth-password-row">
+          <label class="auth-label" for="password">Password
+            <input class="auth-input" type="password" id="password" name="password" required minlength="8" autocomplete="new-password" placeholder="At least 8 characters">
+          </label>
+          <label class="auth-label" for="confirm_password">Confirm password
+            <input class="auth-input" type="password" id="confirm_password" name="confirm_password" required minlength="8" autocomplete="new-password" placeholder="Enter it again">
+          </label>
+        </div>
+        <button type="submit" id="btn-submit-register" class="auth-submit">Create account <i data-lucide="arrow-right" class="h-4 w-4"></i></button>
+      </form>
+      <p class="auth-switch">Already have an account? <a href="{{ url_for('auth.login') }}">Sign in</a></p>
+    </div>
+  </div>
+</section>
+{% endblock %}
