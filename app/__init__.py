@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from secrets import token_urlsafe
 from flask import Flask
@@ -104,7 +104,7 @@ def create_app(config_class=Config):
                 ]
                 for days_ago, incident_type, track_id in sample_incidents:
                     db.session.add(Violation(
-                        timestamp=datetime.utcnow() - timedelta(days=days_ago, hours=track_id),
+                        timestamp=datetime.now(timezone.utc) - timedelta(days=days_ago, hours=track_id),
                         track_id=track_id,
                         violation_type=incident_type,
                         camera="Sample Worksite Feed",
@@ -114,7 +114,7 @@ def create_app(config_class=Config):
             if DailyStat.query.count() == 0:
                 for days_ago, compliance in ((0, 92.0), (1, 89.5), (2, 94.0), (4, 87.0), (8, 96.0)):
                     db.session.add(DailyStat(
-                        date=(datetime.utcnow().date() - timedelta(days=days_ago)).isoformat(),
+                        date=(datetime.now(timezone.utc).date() - timedelta(days=days_ago)).isoformat(),
                         hardhat_not=2 if days_ago % 2 == 0 else 1,
                         vest_not=1,
                         mask_not=1 if days_ago == 2 else 0,

@@ -50,11 +50,13 @@ def initialize_runtime():
 
         db.session.commit()
 
-        detector.confidence_threshold = float(
-            Setting.get_value("confidence", app.config["DEFAULT_CONFIDENCE"])
+        conf_val = Setting.get_value("confidence", app.config["DEFAULT_CONFIDENCE"])
+        detector.confidence_threshold = (
+            float(conf_val) if conf_val is not None else float(app.config["DEFAULT_CONFIDENCE"])
         )
-        detector.alert_cooldown = int(
-            Setting.get_value("cooldown", app.config["ALERT_COOLDOWN_SECONDS"])
+        cooldown_val = Setting.get_value("cooldown", app.config["ALERT_COOLDOWN_SECONDS"])
+        detector.alert_cooldown = (
+            int(cooldown_val) if cooldown_val is not None else int(app.config["ALERT_COOLDOWN_SECONDS"])
         )
 
         if not app.config["DEMO_MODE"]:

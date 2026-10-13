@@ -3,3 +3,5 @@ search-path = ["."]
 
 [diagnostics]
 "missing-import" = "ignore"
+"untyped-import" = "ignore"
+"deprecated" = "ignore"

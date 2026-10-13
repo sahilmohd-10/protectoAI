@@ -10,7 +10,7 @@ import sys
 import time
 import json
 import threading
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -175,7 +175,7 @@ class PPEDetector:
             "camera": self.camera_name,
             "snapshot_path": rel_path,
             "confidence": round(conf, 2),
-            "timestamp": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+            "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
         }
 
         # Add to live queue for UI updates

@@ -5,7 +5,7 @@ data into SQLite and seed default users, cameras, and system settings.
 
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 import pandas as pd
 
@@ -132,7 +132,7 @@ def import_csv_and_seed():
                     try:
                         base_dt = datetime.strptime(d_str, "%Y-%m-%d")
                     except Exception:
-                        base_dt = datetime.utcnow()
+                        base_dt = datetime.now(timezone.utc)
 
                     if int(row.get("hardhat_not", 0)) > 0:
                         db.session.add(Violation(

@@ -7,7 +7,7 @@ database-driven reports and error-safe HTTP requests.
 import os
 import threading
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import cv2
 import requests
@@ -104,8 +104,9 @@ class TelegramService:
             from app.models.daily_stat import DailyStat
             from app.models.violation import Violation
 
-            seven_days_ago = (datetime.utcnow() - timedelta(days=7)).strftime("%Y-%m-%d")
-            today_str = datetime.utcnow().strftime("%Y-%m-%d")
+            now_utc = datetime.now(timezone.utc)
+            seven_days_ago = (now_utc - timedelta(days=7)).strftime("%Y-%m-%d")
+            today_str = now_utc.strftime("%Y-%m-%d")
 
             stats = DailyStat.query.filter(DailyStat.date >= seven_days_ago).all()
             total_h = sum(s.hardhat_not for s in stats)

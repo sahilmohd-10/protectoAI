@@ -1,6 +1,6 @@
 import json
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from flask import Blueprint, jsonify, request, Response, send_file, current_app
 from flask_login import login_required, current_user
 import io
@@ -23,7 +23,7 @@ api_bp = Blueprint("api", __name__)
 def get_stats():
     """Live telemetry stats for dashboard cards."""
     # Today's aggregated violations from DB
-    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     violations_today = Violation.query.filter(Violation.timestamp >= today_start).count()
 
     # Most missed PPE item
@@ -129,7 +129,7 @@ def acknowledge_violation(violation_id):
 def analytics_trends():
     """Returns Chart.js compatible time-series and breakdown datasets."""
     days = min(max(request.args.get("days", 3650, type=int), 1), 3650)
-    cutoff = datetime.utcnow() - timedelta(days=days)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
 
     # Historical Daily stats from SQLite
     stats = DailyStat.query.filter(DailyStat.date >= cutoff.date()).order_by(DailyStat.date.asc()).all()
