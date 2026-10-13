@@ -59,13 +59,10 @@ def initialize_runtime():
             int(cooldown_val) if cooldown_val is not None else int(app.config["ALERT_COOLDOWN_SECONDS"])
         )
 
-        if not app.config["DEMO_MODE"]:
-            detector._ensure_model()
-
+# Run initialization on import so WSGI servers (e.g. Gunicorn) set up tables & seeds
+initialize_runtime()
 
 if __name__ == "__main__":
-    initialize_runtime()
-
     default_host = "0.0.0.0" if app.config["FLASK_ENV"] == "production" else "127.0.0.1"
     host = os.getenv("FLASK_HOST", default_host)
     port = int(os.getenv("PORT", os.getenv("FLASK_PORT", 5000)))
