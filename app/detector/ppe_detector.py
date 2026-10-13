@@ -324,6 +324,21 @@ class PPEDetector:
         else:
             cap = cv2.VideoCapture(src)
 
+        # If webcam could not be opened (e.g. cloud server or no physical webcam connected),
+        # automatically fall back to sample video (pp2.mp4) so detection works immediately!
+        if (cap is None or not cap.isOpened()) and is_numeric:
+            for fallback_video in ["pp2.mp4", "ppe.mp4", "ppe-1-1.mp4"]:
+                vid_path = ROOT_DIR / fallback_video if not os.path.isabs(fallback_video) else Path(fallback_video)
+                if os.path.exists(vid_path):
+                    c = cv2.VideoCapture(str(vid_path))
+                    if c.isOpened():
+                        cap = c
+                        src = str(vid_path)
+                        is_numeric = False
+                        self.camera_name = f"{self.camera_name} (Sample Video Fallback)"
+                        print(f"[*] Webcam unavailable on server; fell back to {fallback_video}")
+                        break
+
         if cap is None or not cap.isOpened():
             print(f"[!] Could not open video source: {self.source}")
             err_frame = np.zeros((480, 720, 3), dtype=np.uint8)
@@ -547,12 +562,12 @@ class PPEDetector:
             with self._frame_lock:
                 frame_bytes = self.current_jpeg
 
-            if demo_mode or frame_bytes is None:
+            if frame_bytes is None:
                 # Generate a sleek placeholder frame if detector hasn't started yet
                 if placeholder is None:
                     blank = np.zeros((480, 720, 3), dtype=np.uint8)
-                    title = "PROTECTO.AI - PUBLIC DEMO" if demo_mode else "Protecto.AI - Stream Inactive"
-                    subtitle = "Sample data only - live inference is disabled" if demo_mode else "Click 'Start Detection' to begin"
+                    title = "Protecto.AI - Stream Inactive"
+                    subtitle = "Click 'Start Detection' or choose a demo video to begin"
                     cv2.putText(blank, title, (145, 220),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.75, (100, 100, 100), 2)
                     cv2.putText(blank, subtitle, (100, 260),

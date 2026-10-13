@@ -42,9 +42,10 @@ def initialize_runtime():
             db.session.add(admin)
 
         # Seed default cameras if empty
-        if Camera.query.count() == 0 and not app.config["DEMO_MODE"]:
-            cam1 = Camera(name="Main Webcam (Camera 0)", source_type="webcam", source_path="0", is_active=True)
-            cam2 = Camera(name="Demo Video (pp2.mp4)", source_type="file", source_path="pp2.mp4", is_active=False)
+        if Camera.query.count() == 0:
+            is_cloud = (os.name != 'nt' and not os.path.exists('/dev/video0'))
+            cam1 = Camera(name="Main Webcam (Camera 0)", source_type="webcam", source_path="0", is_active=not is_cloud)
+            cam2 = Camera(name="Demo Video (pp2.mp4)", source_type="file", source_path="pp2.mp4", is_active=is_cloud)
             db.session.add_all([cam1, cam2])
             print("[+] Seeded default camera sources.")
 

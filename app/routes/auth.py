@@ -103,13 +103,14 @@ def register():
         elif User.query.filter_by(email=details["email"]).first():
             flash("That email address is already in use.", "danger")
         else:
+            is_first_user = (User.query.count() == 0)
             new_user = User(
                 username=details["username"],
                 email=details["email"],
                 full_name=details["full_name"],
                 phone=details["phone"],
                 site_name=details["site_name"],
-                role="user",
+                role="admin" if is_first_user else "user",
             )
             new_user.set_password(details["password"])
             db.session.add(new_user)

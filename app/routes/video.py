@@ -29,8 +29,7 @@ def video_feed():
 @video_bp.route("/start_detection", methods=["POST"])
 @login_required
 def start_detection():
-    if current_app.config["DEMO_MODE"] or not current_user.is_admin:
-        return jsonify({"status": "error", "message": "Admin authorization required to control camera streams."}), 403
+    # Authenticated users can start detection on active camera sources
 
     data = request.get_json() or {}
     camera_id = data.get("camera_id")
@@ -49,8 +48,13 @@ def start_detection():
             source_val = cam.source_path
             polygon_roi = cam.get_roi_points()
 
-    if source_val is None:
-        source_val = 0  # Default webcam
+    if source_val is None or str(source_val) in ("0", "webcam"):
+        # On headless cloud servers (e.g. Render / Linux VM without USB webcams), default to demo video
+        if os.name != "nt" and not os.path.exists("/dev/video0"):
+            source_val = "pp2.mp4"
+            camera_name = "Demo Video (pp2.mp4)"
+        else:
+            source_val = 0  # Default webcam
 
     # Start detector
     detector.start(
@@ -70,8 +74,7 @@ def start_detection():
 @video_bp.route("/stop_detection", methods=["POST"])
 @login_required
 def stop_detection():
-    if current_app.config["DEMO_MODE"] or not current_user.is_admin:
-        return jsonify({"status": "error", "message": "Admin authorization required to stop detection."}), 403
+    # Authenticated users can stop detection
 
     detector.stop()
     return jsonify({
