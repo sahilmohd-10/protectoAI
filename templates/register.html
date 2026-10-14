@@ -1,55 +1,613 @@
 {% extends "base.html" %}
 
-{% block title %}Create Account — Protecto.AI{% endblock %}
+{% block title %}Create Account — Protecto.AI Industrial Safety{% endblock %}
 
 {% block content %}
-<section class="auth-layout auth-register -mx-4 -mt-4 sm:-mx-8 sm:-mt-8">
-  <aside class="auth-photo">
-    <img src="https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=1600&q=85" alt="Active construction site with workers and equipment">
-    <div class="auth-photo-shade"></div>
-    <div class="auth-photo-content">
-      <p class="auth-photo-kicker">PROTECTO <span>/</span> NEW ACCOUNT</p>
-      <div class="auth-photo-quote"><span class="auth-rule"></span><p>Every safer shift begins with a team that pays attention.</p></div>
-      <p class="auth-photo-note">SITE SAFETY MONITORING</p>
+<section class="auth-layout auth-register -mx-4 -mt-4 sm:-mx-8 sm:-mt-8 rounded-lg overflow-hidden border border-slate-200/90 shadow-xl bg-white">
+  
+  <!-- Left Side: Safety Engineering Photo Aside -->
+  <aside class="auth-photo relative bg-[#18261e] text-white overflow-hidden flex flex-col justify-between">
+    <img src="https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=1600&q=85"
+         alt="Active construction site with safety monitored equipment"
+         class="absolute inset-0 w-full h-full object-cover opacity-35 filter brightness-90">
+    <div class="absolute inset-0 bg-gradient-to-t from-[#0e1713] via-[#14231b]/80 to-[#1b2f24]/60"></div>
+    
+    <!-- Top Brand & Telemetry Badge -->
+    <div class="relative z-10 p-8 sm:p-10 flex flex-col gap-3">
+      <div class="flex items-center justify-between">
+        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/70 border border-emerald-500/30 text-emerald-400 font-mono text-[11px] tracking-wider font-semibold backdrop-blur-sm">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          PROTECTO.AI / NEW ACCOUNT
+        </span>
+        <span class="font-mono text-[11px] text-emerald-300/80 tracking-widest hidden sm:inline">SAFETY FIRST</span>
+      </div>
+      
+      <!-- Live Monitoring Status Pill -->
+      <div class="mt-2 inline-flex items-center gap-3 p-2.5 rounded-lg bg-black/40 border border-white/10 backdrop-blur-md text-xs font-mono">
+        <div class="flex items-center gap-1.5 text-emerald-400">
+          <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
+          <span class="font-bold">VERIFIED REGISTRATION</span>
+        </div>
+        <span class="text-white/30">|</span>
+        <span class="text-slate-300">YOLOv8 Shield</span>
+        <span class="text-white/30">|</span>
+        <span class="text-emerald-400">Active</span>
+      </div>
+    </div>
+
+    <!-- Center Quote -->
+    <div class="relative z-10 px-8 sm:px-10 py-6 max-w-lg">
+      <div class="w-12 h-1 bg-[#d7a15e] mb-4 rounded-full"></div>
+      <p class="font-sans font-bold text-3xl sm:text-4xl text-white leading-tight tracking-tight">
+        Every safer shift begins with a team that pays attention.
+      </p>
+      <p class="mt-3 text-sm text-slate-300/90 font-sans leading-relaxed">
+        Enterprise safety monitoring for worksites, factories, high-risk zones, and automated violation auditing.
+      </p>
+    </div>
+
+    <!-- Bottom Compliance Badges Strip -->
+    <div class="relative z-10 p-8 sm:p-10 pt-4 border-t border-white/10 bg-black/30 backdrop-blur-sm flex items-center justify-between flex-wrap gap-3">
+      <div class="flex items-center gap-4 text-[11px] font-mono text-slate-300">
+        <span class="flex items-center gap-1.5"><i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-400"></i> OSHA 1910</span>
+        <span class="flex items-center gap-1.5"><i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-400"></i> ISO 45001</span>
+        <span class="flex items-center gap-1.5 hidden md:flex"><i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-400"></i> EN 397</span>
+      </div>
+      <span class="text-[10px] font-mono text-slate-400">FIELD ACCESS GATEWAY</span>
     </div>
   </aside>
-  <div class="auth-panel">
-    <div class="auth-panel-inner">
-      <p class="auth-eyebrow">GET STARTED</p>
-      <h1>Create your account</h1>
-      <p class="auth-intro">Set up your access to the safety workspace.</p>
-      <form method="POST" action="{{ url_for('auth.register') }}" class="auth-form">
+
+  <!-- Right Side: Advanced Registration Panel -->
+  <div class="auth-panel p-6 sm:p-10 bg-[#fbfcf9] flex items-center justify-center">
+    <div class="auth-panel-inner w-full max-w-[500px]">
+      
+      <!-- Top Navigation Tabs Switcher -->
+      <nav class="auth-tabs" role="tablist" aria-label="Authentication Options">
+        <a href="{{ url_for('auth.login') }}" class="auth-tab-btn">
+          <i data-lucide="log-in" class="w-4 h-4"></i>
+          <span>Sign In</span>
+        </a>
+        <button type="button" class="auth-tab-btn active">
+          <i data-lucide="user-plus" class="w-4 h-4"></i>
+          <span>Create Account</span>
+        </button>
+      </nav>
+
+      <div class="mb-4">
+        <p class="auth-eyebrow">GET STARTED WITH PROTECTO</p>
+        <h1 class="text-3xl font-bold tracking-tight text-slate-900 mt-1">Create your account</h1>
+        <p class="auth-intro text-sm text-slate-600 mt-1">Set up your workspace with real-time safety protection.</p>
+      </div>
+
+      <form method="POST" action="{{ url_for('auth.register') }}" class="auth-form" id="register-form" onsubmit="return validateRegisterForm(event)">
+        <!-- Hidden parameter for evaluated password strength -->
+        <input type="hidden" name="password_strength" id="reg-password-strength-input" value="weak">
+
+        <!-- Full Name and Username Row -->
         <div class="auth-field-row">
-          <label class="auth-label" for="full_name">Full name
-            <input class="auth-input" type="text" id="full_name" name="full_name" required minlength="2" maxlength="120" autocomplete="name" placeholder="Your name">
+          <label class="auth-label" for="full_name">
+            <span>Full Name</span>
+            <input class="auth-input"
+                   type="text"
+                   id="full_name"
+                   name="full_name"
+                   required
+                   minlength="2"
+                   maxlength="120"
+                   autocomplete="name"
+                   value="{{ form_data.get('full_name', '') if form_data else '' }}"
+                   placeholder="Your full name">
           </label>
-          <label class="auth-label" for="username">Username
-            <input class="auth-input" type="text" id="username" name="username" required autofocus minlength="3" autocomplete="username" placeholder="Choose a username">
+
+          <!-- Username with Database Existence Check -->
+          <label class="auth-label" for="username">
+            <span class="flex items-center justify-between">
+              <span>Username</span>
+              <span id="username-check-status-icon" class="text-xs font-mono text-slate-400"></span>
+            </span>
+            <div class="auth-input-wrapper">
+              <input class="auth-input"
+                     type="text"
+                     id="username"
+                     name="username"
+                     required
+                     autofocus
+                     minlength="3"
+                     maxlength="64"
+                     autocomplete="username"
+                     value="{{ form_data.get('username', '') if form_data else '' }}"
+                     placeholder="Choose a username"
+                     oninput="handleUsernameInput(this.value)">
+            </div>
           </label>
         </div>
-        <div class="auth-field-row">
-          <label class="auth-label" for="email">Gmail address
-            <input class="auth-input" type="email" id="email" name="email" required pattern="[A-Za-z0-9._%+-]+@gmail\.com" autocomplete="email" placeholder="you@gmail.com">
-          </label>
-          <label class="auth-label" for="phone">Phone number
-            <input class="auth-input" type="tel" id="phone" name="phone" required pattern="\+?[1-9][0-9\s().-]{7,22}" maxlength="24" autocomplete="tel" placeholder="+1 555 123 4567">
-          </label>
-        </div>
-        <label class="auth-label" for="site_name">Worksite or project
-          <input class="auth-input" type="text" id="site_name" name="site_name" required minlength="2" maxlength="120" autocomplete="organization" placeholder="Project or site name">
+
+        <!-- Real-Time Username Database Status Feedback -->
+        <div id="username-feedback" class="username-feedback hidden" role="status" aria-live="polite"></div>
+
+        <!-- Email Address -->
+        <label class="auth-label" for="email">
+          <span>Email Address</span>
+          <input class="auth-input"
+                 type="email"
+                 id="email"
+                 name="email"
+                 required
+                 autocomplete="email"
+                 value="{{ form_data.get('email', '') if form_data else '' }}"
+                 placeholder="you@company.com or you@gmail.com">
         </label>
-        <div class="auth-password-row">
-          <label class="auth-label" for="password">Password
-            <input class="auth-input" type="password" id="password" name="password" required minlength="8" autocomplete="new-password" placeholder="At least 8 characters">
+
+        <!-- Country Code Selector + Phone Number with Dynamic Digit Validation -->
+        <label class="auth-label" for="phone">
+          <span class="flex items-center justify-between">
+            <span>Phone Number</span>
+            <span id="phone-country-hint" class="text-[11px] font-mono text-slate-500 font-normal">🇮🇳 India (+91): 10 digits</span>
+          </span>
+          <div class="phone-field-group">
+            <!-- Country Code Selector -->
+            <div class="country-select-box">
+              <select id="country_code"
+                      name="country_code"
+                      class="country-code-select"
+                      onchange="handleCountryCodeChange(this.value)"
+                      aria-label="Country calling code">
+                <option value="+91" selected>🇮🇳 India (+91)</option>
+                <option value="+1">🇺🇸 USA / CA (+1)</option>
+                <option value="+44">🇬🇧 UK (+44)</option>
+                <option value="+971">🇦🇪 UAE (+971)</option>
+                <option value="+966">🇸🇦 Saudi (+966)</option>
+                <option value="+61">🇦🇺 Australia (+61)</option>
+                <option value="+49">🇩🇪 Germany (+49)</option>
+                <option value="+33">🇫🇷 France (+33)</option>
+                <option value="+65">🇸🇬 Singapore (+65)</option>
+                <option value="+81">🇯🇵 Japan (+81)</option>
+                <option value="+86">🇨🇳 China (+86)</option>
+                <option value="+55">🇧🇷 Brazil (+55)</option>
+                <option value="+27">🇿🇦 South Africa (+27)</option>
+                <option value="+60">🇲🇾 Malaysia (+60)</option>
+                <option value="+92">🇵🇰 Pakistan (+92)</option>
+                <option value="+880">🇧🇩 Bangladesh (+880)</option>
+                <option value="+">🌐 Other (+)</option>
+              </select>
+            </div>
+
+            <!-- Phone Input with Country Code Validation -->
+            <div class="phone-input-wrapper">
+              <input class="auth-input"
+                     type="tel"
+                     id="phone"
+                     name="phone"
+                     required
+                     maxlength="10"
+                     autocomplete="tel-national"
+                     value="{{ form_data.get('phone', '') if form_data else '' }}"
+                     placeholder="98765 43210"
+                     oninput="handlePhoneInput(this)"
+                     onblur="handlePhoneInput(this, true)">
+            </div>
+          </div>
+          <p id="phone-register-error" class="phone-error-msg hidden" style="color: #dc2626; font-size: 12px; margin-top: 4px; font-weight: 500;"></p>
+        </label>
+
+        <!-- Worksite or Project Name -->
+        <label class="auth-label" for="site_name">
+          <span>Worksite / Project Name</span>
+          <input class="auth-input"
+                 type="text"
+                 id="site_name"
+                 name="site_name"
+                 required
+                 minlength="2"
+                 maxlength="120"
+                 autocomplete="organization"
+                 value="{{ form_data.get('site_name', '') if form_data else '' }}"
+                 placeholder="e.g. Apex Industrial Site">
+        </label>
+
+        <!-- Password with Show/Hide and Strength Parameter -->
+        <div class="auth-field-row">
+          <label class="auth-label" for="password">
+            <span>Password</span>
+            <div class="auth-input-wrapper">
+              <input class="auth-input"
+                     type="password"
+                     id="password"
+                     name="password"
+                     required
+                     minlength="8"
+                     autocomplete="new-password"
+                     placeholder="At least 8 characters"
+                     oninput="handlePasswordInput(this.value)">
+              <button type="button"
+                      class="auth-pwd-toggle"
+                      onclick="togglePasswordVisibility('password', this)"
+                      aria-label="Toggle password visibility"
+                      title="Show or hide password">
+                <i data-lucide="eye" class="w-4 h-4"></i>
+              </button>
+            </div>
           </label>
-          <label class="auth-label" for="confirm_password">Confirm password
-            <input class="auth-input" type="password" id="confirm_password" name="confirm_password" required minlength="8" autocomplete="new-password" placeholder="Enter it again">
+
+          <!-- Confirm Password with Match Indicator -->
+          <label class="auth-label" for="confirm_password">
+            <span class="flex items-center justify-between">
+              <span>Confirm Password</span>
+              <span id="password-match-tag" class="text-[11px] font-mono hidden"></span>
+            </span>
+            <div class="auth-input-wrapper">
+              <input class="auth-input"
+                     type="password"
+                     id="confirm_password"
+                     name="confirm_password"
+                     required
+                     minlength="8"
+                     autocomplete="new-password"
+                     placeholder="Re-enter password"
+                     oninput="handleConfirmPasswordInput(this.value)">
+              <button type="button"
+                      class="auth-pwd-toggle"
+                      onclick="togglePasswordVisibility('confirm_password', this)"
+                      aria-label="Toggle confirm password visibility"
+                      title="Show or hide password">
+                <i data-lucide="eye" class="w-4 h-4"></i>
+              </button>
+            </div>
           </label>
         </div>
-        <button type="submit" id="btn-submit-register" class="auth-submit">Create account <i data-lucide="arrow-right" class="h-4 w-4"></i></button>
+
+        <!-- Password Strength Parameter Meter Card -->
+        <div class="password-strength-card" id="pwd-strength-container">
+          <div class="pwd-strength-header">
+            <span class="pwd-strength-title flex items-center gap-1.5">
+              <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-slate-500"></i>
+              <span>Password Strength Security Parameter</span>
+            </span>
+            <span id="pwd-strength-badge" class="pwd-strength-badge weak">Weak</span>
+          </div>
+
+          <!-- Dynamic Animated Strength Progress Bar -->
+          <div class="pwd-strength-meter">
+            <div id="pwd-strength-fill" class="pwd-strength-fill weak"></div>
+          </div>
+
+          <!-- Live Criteria Checklist -->
+          <div class="pwd-checklist">
+            <div id="chk-len" class="pwd-check-item">
+              <i data-lucide="circle" class="w-3.5 h-3.5"></i> <span>8+ Characters</span>
+            </div>
+            <div id="chk-upper" class="pwd-check-item">
+              <i data-lucide="circle" class="w-3.5 h-3.5"></i> <span>Uppercase Letter (A-Z)</span>
+            </div>
+            <div id="chk-num" class="pwd-check-item">
+              <i data-lucide="circle" class="w-3.5 h-3.5"></i> <span>Number Digit (0-9)</span>
+            </div>
+            <div id="chk-sym" class="pwd-check-item">
+              <i data-lucide="circle" class="w-3.5 h-3.5"></i> <span>Special Symbol (!@#$...)</span>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" id="btn-submit-register" class="auth-submit">
+          <span class="flex items-center gap-2">
+            <i data-lucide="user-check" class="w-4 h-4 text-emerald-300"></i>
+            <span>Create Account</span>
+          </span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </button>
       </form>
-      <p class="auth-switch">Already have an account? <a href="{{ url_for('auth.login') }}">Sign in</a></p>
+
+      <p class="auth-switch">
+        Already have an account?
+        <a href="{{ url_for('auth.login') }}" class="text-emerald-700 font-bold underline hover:text-emerald-800">
+          Sign in here
+        </a>
+      </p>
     </div>
   </div>
 </section>
+
+<!-- Advanced Authentication Client Logic -->
+<script>
+  const COUNTRY_PHONE_SPECS = {
+    "+91": { name: "India", digits: [10], placeholder: "98765 43210", hint: "🇮🇳 India (+91): exactly 10 digits" },
+    "+1": { name: "USA / Canada", digits: [10], placeholder: "555 123 4567", hint: "🇺🇸 USA / Canada (+1): 10 digits" },
+    "+44": { name: "United Kingdom", digits: [10], placeholder: "7911 123456", hint: "🇬🇧 UK (+44): 10 digits" },
+    "+971": { name: "United Arab Emirates", digits: [9], placeholder: "50 123 4567", hint: "🇦🇪 UAE (+971): 9 digits" },
+    "+966": { name: "Saudi Arabia", digits: [9], placeholder: "50 123 4567", hint: "🇸🇦 Saudi Arabia (+966): 9 digits" },
+    "+61": { name: "Australia", digits: [9], placeholder: "412 345 678", hint: "🇦🇺 Australia (+61): 9 digits" },
+    "+49": { name: "Germany", digits: [10, 11], placeholder: "151 23456789", hint: "🇩🇪 Germany (+49): 10 or 11 digits" },
+    "+33": { name: "France", digits: [9], placeholder: "6 12 34 56 78", hint: "🇫🇷 France (+33): 9 digits" },
+    "+65": { name: "Singapore", digits: [8], placeholder: "8123 4567", hint: "🇸🇬 Singapore (+65): 8 digits" },
+    "+81": { name: "Japan", digits: [10], placeholder: "90 1234 5678", hint: "🇯🇵 Japan (+81): 10 digits" },
+    "+86": { name: "China", digits: [11], placeholder: "138 0013 8000", hint: "🇨🇳 China (+86): 11 digits" },
+    "+55": { name: "Brazil", digits: [10, 11], placeholder: "11 98765 4321", hint: "🇧🇷 Brazil (+55): 10 or 11 digits" },
+    "+27": { name: "South Africa", digits: [9], placeholder: "71 123 4567", hint: "🇿🇦 South Africa (+27): 9 digits" },
+    "+60": { name: "Malaysia", digits: [9, 10], placeholder: "12 345 6789", hint: "🇲🇾 Malaysia (+60): 9 or 10 digits" },
+    "+92": { name: "Pakistan", digits: [10], placeholder: "300 123 4567", hint: "🇵🇰 Pakistan (+92): 10 digits" },
+    "+880": { name: "Bangladesh", digits: [10], placeholder: "171 234 5678", hint: "🇧🇩 Bangladesh (+880): 10 digits" },
+    "+": { name: "Other / International", digits: [7, 8, 9, 10, 11, 12, 13, 14, 15], placeholder: "1234567890", hint: "🌐 International: 7 to 15 digits" }
+  };
+
+  let usernameCheckTimer = null;
+  let isUsernameAvailable = true;
+  let currentCountryCode = "+91";
+
+  function togglePasswordVisibility(inputId, btnElement) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+    const icon = btnElement.querySelector('i');
+    if (icon) {
+      icon.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye');
+      if (window.lucide) { lucide.createIcons(); }
+    }
+  }
+
+  function handleCountryCodeChange(code) {
+    currentCountryCode = code;
+    const spec = COUNTRY_PHONE_SPECS[code] || COUNTRY_PHONE_SPECS["+"];
+    const phoneInput = document.getElementById('phone');
+    const hintSpan = document.getElementById('phone-country-hint');
+
+    phoneInput.placeholder = spec.placeholder;
+    hintSpan.textContent = spec.hint;
+    const maxDigits = Math.max(...spec.digits);
+    phoneInput.maxLength = maxDigits;
+    handlePhoneInput(phoneInput, phoneInput.value.length > 0);
+  }
+
+  function handlePhoneInput(input, showError = false) {
+    const rawVal = input.value;
+    const digitsOnly = rawVal.replace(/\D/g, '');
+    const spec = COUNTRY_PHONE_SPECS[currentCountryCode] || COUNTRY_PHONE_SPECS["+"];
+    const expectedDigits = spec.digits;
+    const maxDigits = Math.max(...expectedDigits);
+
+    const constrainedDigits = digitsOnly.slice(0, maxDigits);
+    if (constrainedDigits !== input.value) {
+      input.value = constrainedDigits;
+    }
+
+    const digitCount = constrainedDigits.length;
+    const isValid = expectedDigits.includes(digitCount);
+    const errEl = document.getElementById('phone-register-error');
+    const countryName = spec.name || "selected country";
+
+    let errorMsg = "";
+    if (!isValid) {
+      if (digitCount === 0) {
+        const exp = expectedDigits.length === 1 ? `${expectedDigits[0]} digits` : `${expectedDigits[0]}–${expectedDigits[expectedDigits.length - 1]} digits`;
+        errorMsg = `Please enter a ${exp} phone number for ${countryName} (${currentCountryCode}).`;
+      } else if (expectedDigits.length === 1) {
+        errorMsg = `Please enter a valid ${expectedDigits[0]}-digit phone number for ${countryName} (${currentCountryCode}). (Currently entered ${digitCount} digit${digitCount === 1 ? '' : 's'}).`;
+      } else {
+        errorMsg = `Please enter a valid ${expectedDigits[0]} to ${expectedDigits[expectedDigits.length - 1]}-digit phone number for ${countryName} (${currentCountryCode}). (Currently entered ${digitCount} digit${digitCount === 1 ? '' : 's'}).`;
+      }
+    }
+
+    if (isValid) {
+      input.classList.add('is-valid');
+      input.classList.remove('is-invalid');
+      input.setCustomValidity('');
+      if (errEl) {
+        errEl.textContent = '';
+        errEl.classList.add('hidden');
+      }
+    } else {
+      input.classList.remove('is-valid');
+      input.setCustomValidity(errorMsg);
+      if (showError || input.dataset.touched === 'true' || (digitCount > 0 && digitCount >= maxDigits)) {
+        input.classList.add('is-invalid');
+        if (errEl) {
+          errEl.textContent = errorMsg;
+          errEl.classList.remove('hidden');
+        }
+      } else {
+        input.classList.remove('is-invalid');
+        if (errEl) {
+          errEl.classList.add('hidden');
+        }
+      }
+    }
+  }
+
+  function handleUsernameInput(val) {
+    const trimmed = val.trim();
+    const feedbackBox = document.getElementById('username-feedback');
+    const usernameInput = document.getElementById('username');
+    const submitBtn = document.getElementById('btn-submit-register');
+
+    clearTimeout(usernameCheckTimer);
+
+    if (!trimmed) {
+      feedbackBox.className = 'username-feedback hidden';
+      feedbackBox.textContent = '';
+      usernameInput.classList.remove('is-valid', 'is-invalid');
+      isUsernameAvailable = true;
+      submitBtn.disabled = false;
+      return;
+    }
+
+    if (trimmed.length < 3) {
+      feedbackBox.className = 'username-feedback checking';
+      feedbackBox.innerHTML = '<i data-lucide="info" class="w-3.5 h-3.5"></i> Username must be at least 3 characters.';
+      feedbackBox.classList.remove('hidden');
+      usernameInput.classList.add('is-invalid');
+      usernameInput.classList.remove('is-valid');
+      isUsernameAvailable = false;
+      submitBtn.disabled = true;
+      if (window.lucide) { lucide.createIcons(); }
+      return;
+    }
+
+    feedbackBox.className = 'username-feedback checking';
+    feedbackBox.innerHTML = '<span class="inline-block w-2.5 h-2.5 rounded-full bg-slate-400 animate-ping mr-1"></span> Checking database availability...';
+    feedbackBox.classList.remove('hidden');
+
+    usernameCheckTimer = setTimeout(() => {
+      fetch(`/auth/check-username?username=${encodeURIComponent(trimmed)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.exists) {
+            feedbackBox.className = 'username-feedback exists';
+            feedbackBox.innerHTML = `<i data-lucide="alert-triangle" class="w-4 h-4"></i> <strong>Username '${trimmed}' already exists in database. Please choose another.</strong>`;
+            usernameInput.classList.add('is-invalid');
+            usernameInput.classList.remove('is-valid');
+            isUsernameAvailable = false;
+            submitBtn.disabled = true;
+          } else if (data.available) {
+            feedbackBox.className = 'username-feedback available';
+            feedbackBox.innerHTML = `<i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600"></i> <strong>Username '${trimmed}' is available!</strong>`;
+            usernameInput.classList.add('is-valid');
+            usernameInput.classList.remove('is-invalid');
+            isUsernameAvailable = true;
+            submitBtn.disabled = false;
+          }
+          if (window.lucide) { lucide.createIcons(); }
+        })
+        .catch(() => {
+          feedbackBox.className = 'username-feedback hidden';
+        });
+    }, 280);
+  }
+
+  function handlePasswordInput(pwd) {
+    const badge = document.getElementById('pwd-strength-badge');
+    const bar = document.getElementById('pwd-strength-fill');
+    const hiddenStrengthInput = document.getElementById('reg-password-strength-input');
+
+    const hasLen8 = pwd.length >= 8;
+    const hasLen12 = pwd.length >= 12;
+    const hasUpper = /[A-Z]/.test(pwd);
+    const hasLower = /[a-z]/.test(pwd);
+    const hasNumber = /[0-9]/.test(pwd);
+    const hasSymbol = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(pwd);
+
+    updateCheckItem('chk-len', hasLen8);
+    updateCheckItem('chk-upper', hasUpper);
+    updateCheckItem('chk-num', hasNumber);
+    updateCheckItem('chk-sym', hasSymbol);
+
+    let score = 0;
+    if (hasLen8) score++;
+    if (hasLen12) score++;
+    if (hasUpper) score++;
+    if (hasLower) score++;
+    if (hasNumber) score++;
+    if (hasSymbol) score++;
+
+    let strengthLabel = 'weak';
+    if (!hasLen8 || score < 3) {
+      strengthLabel = 'weak';
+    } else if (score >= 5 && pwd.length >= 10 && hasUpper && hasLower && hasNumber && hasSymbol) {
+      strengthLabel = 'very_strong';
+    } else {
+      strengthLabel = 'strong';
+    }
+
+    hiddenStrengthInput.value = strengthLabel;
+
+    if (strengthLabel === 'weak') {
+      badge.textContent = 'Weak';
+      badge.className = 'pwd-strength-badge weak';
+      bar.className = 'pwd-strength-fill weak';
+    } else if (strengthLabel === 'strong') {
+      badge.textContent = 'Strong';
+      badge.className = 'pwd-strength-badge strong';
+      bar.className = 'pwd-strength-fill strong';
+    } else {
+      badge.textContent = 'Very Strong';
+      badge.className = 'pwd-strength-badge very-strong';
+      bar.className = 'pwd-strength-fill very-strong';
+    }
+
+    const confirmVal = document.getElementById('confirm_password')?.value;
+    if (confirmVal) {
+      handleConfirmPasswordInput(confirmVal);
+    }
+  }
+
+  function updateCheckItem(id, isMet) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (isMet) {
+      el.classList.add('met');
+      el.innerHTML = '<i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-600"></i>' + el.querySelector('span').outerHTML;
+    } else {
+      el.classList.remove('met');
+      el.innerHTML = '<i data-lucide="circle" class="w-3.5 h-3.5 text-slate-400"></i>' + el.querySelector('span').outerHTML;
+    }
+    if (window.lucide) { lucide.createIcons(); }
+  }
+
+  function handleConfirmPasswordInput(confirmVal) {
+    const pwd = document.getElementById('password').value;
+    const matchTag = document.getElementById('password-match-tag');
+    const confirmInput = document.getElementById('confirm_password');
+
+    if (!confirmVal) {
+      matchTag.classList.add('hidden');
+      confirmInput.classList.remove('is-valid', 'is-invalid');
+      return;
+    }
+
+    matchTag.classList.remove('hidden');
+    if (pwd === confirmVal) {
+      matchTag.textContent = '✓ Passwords match';
+      matchTag.className = 'text-[11px] font-mono font-bold text-emerald-700';
+      confirmInput.classList.add('is-valid');
+      confirmInput.classList.remove('is-invalid');
+    } else {
+      matchTag.textContent = '✕ Passwords do not match';
+      matchTag.className = 'text-[11px] font-mono font-bold text-rose-600';
+      confirmInput.classList.add('is-invalid');
+      confirmInput.classList.remove('is-valid');
+    }
+  }
+
+  function validateRegisterForm(e) {
+    if (!isUsernameAvailable) {
+      e.preventDefault();
+      alert("The chosen username already exists in database. Please choose another.");
+      document.getElementById('username')?.focus();
+      return false;
+    }
+
+    const phoneInput = document.getElementById('phone');
+    const phone = phoneInput.value.replace(/\D/g, '');
+    const spec = COUNTRY_PHONE_SPECS[currentCountryCode] || COUNTRY_PHONE_SPECS["+"];
+    if (!spec.digits.includes(phone.length)) {
+      e.preventDefault();
+      phoneInput.dataset.touched = 'true';
+      handlePhoneInput(phoneInput, true);
+      phoneInput.focus();
+      if (typeof phoneInput.reportValidity === 'function') {
+        phoneInput.reportValidity();
+      }
+      return false;
+    }
+
+    const pwd = document.getElementById('password').value;
+    const confirm = document.getElementById('confirm_password').value;
+    if (pwd !== confirm) {
+      e.preventDefault();
+      alert("Passwords do not match. Please re-enter matching passwords.");
+      document.getElementById('confirm_password')?.focus();
+      return false;
+    }
+
+    return true;
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    handleCountryCodeChange('+91');
+    const existingUsername = document.getElementById('username')?.value;
+    if (existingUsername) {
+      handleUsernameInput(existingUsername);
+    }
+    if (window.lucide) { lucide.createIcons(); }
+  });
+</script>
 {% endblock %}

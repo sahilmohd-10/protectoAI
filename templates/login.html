@@ -4,51 +4,536 @@
 
 {% block content %}
 <section class="auth-layout auth-login -mx-4 -mt-4 sm:-mx-8 sm:-mt-8">
+
+  <!-- Photo side -->
   <aside class="auth-photo">
-    <img src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1600&q=85" alt="Construction workers at a job site">
+    <img src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1600&q=85"
+         alt="Workers on a construction site">
     <div class="auth-photo-shade"></div>
     <div class="auth-photo-content">
-      <p class="auth-photo-kicker">PROTECTO <span>/</span> FIELD ACCESS</p>
-      <div class="auth-photo-quote"><span class="auth-rule"></span><p>Good work starts with looking out for each other.</p></div>
-      <p class="auth-photo-note">SITE SAFETY MONITORING</p>
+      <p class="auth-photo-kicker">Protecto <span>/</span> Field Access</p>
+      <div class="auth-photo-quote">
+        <span class="auth-rule"></span>
+        <p>Good work starts with looking out for each other.</p>
+      </div>
+      <p class="auth-photo-note">Site Safety Monitoring</p>
     </div>
   </aside>
+
+  <!-- Form side -->
   <div class="auth-panel">
     <div class="auth-panel-inner">
-      <p class="auth-eyebrow">ACCOUNT ACCESS</p>
-      <h1>Welcome back</h1>
-      <p class="auth-intro">Sign in to your workspace.</p>
-      <form method="POST" action="{{ url_for('auth.login') }}" class="auth-form">
-        <fieldset class="auth-role-group">
-          <legend>Account type</legend>
-          <div class="auth-role-options">
-            <label><input type="radio" name="role" value="user" checked><span>User</span></label>
-            <label><input type="radio" name="role" value="admin"><span>Admin</span></label>
+
+      <!-- Tab switcher -->
+      <nav class="auth-tabs">
+        <button type="button" id="tab-btn-login" onclick="switchTab('login')" class="auth-tab-btn active">Sign In</button>
+        <button type="button" id="tab-btn-register" onclick="switchTab('register')" class="auth-tab-btn">Create Account</button>
+      </nav>
+
+      <!-- ── SIGN IN ── -->
+      <div id="panel-login">
+        <h1>Welcome back</h1>
+        <p class="auth-intro">Sign in with your username, email or phone number.</p>
+
+        <form method="POST" action="{{ url_for('auth.login') }}" class="auth-form">
+
+          <fieldset class="auth-role-group">
+            <legend>Account type</legend>
+            <div class="auth-role-options">
+              <label><input type="radio" name="role" value="user" checked><span>User</span></label>
+              <label><input type="radio" name="role" value="admin"><span>Admin</span></label>
+            </div>
+          </fieldset>
+
+          <label class="auth-label" for="login-username">
+            Username, Email or Phone
+            <input class="auth-input" type="text" id="login-username" name="username"
+                   required autofocus autocomplete="username" placeholder="Enter your username or email">
+          </label>
+
+          <label class="auth-label" for="login-password">
+            Password
+            <div class="auth-input-wrapper">
+              <input class="auth-input" type="password" id="login-password" name="password"
+                     required autocomplete="current-password" placeholder="Your password">
+              <button type="button" class="auth-pwd-toggle" onclick="togglePwd('login-password', this)" title="Show / hide">
+                <i data-lucide="eye" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </label>
+
+          <label class="auth-remember">
+            <input type="checkbox" name="remember" checked>
+            <span>Keep me signed in</span>
+          </label>
+
+          <button type="submit" id="btn-submit-login" class="auth-submit">
+            Sign in <i data-lucide="arrow-right" class="h-4 w-4"></i>
+          </button>
+        </form>
+
+        <p class="auth-switch">
+          New to Protecto?
+          <button type="button" onclick="switchTab('register')" class="auth-link-btn">Create an account</button>
+        </p>
+      </div>
+
+      <!-- ── CREATE ACCOUNT ── -->
+      <div id="panel-register" class="hidden">
+        <h1>Create your account</h1>
+        <p class="auth-intro">Set up your access to the safety workspace.</p>
+
+        <form method="POST" action="{{ url_for('auth.register') }}" class="auth-form"
+              onsubmit="return validateForm(event)">
+
+          <input type="hidden" name="password_strength" id="reg-strength-input" value="weak">
+
+          <div class="auth-field-row">
+            <label class="auth-label" for="full_name">
+              Full name
+              <input class="auth-input" type="text" id="full_name" name="full_name"
+                     required minlength="2" maxlength="120" autocomplete="name" placeholder="Your name">
+            </label>
+
+            <label class="auth-label" for="username">
+              Username
+              <div class="auth-input-wrapper">
+                <input class="auth-input" type="text" id="username" name="username"
+                       required minlength="3" maxlength="64" autocomplete="username"
+                       placeholder="Pick a username" oninput="checkUsername(this.value)">
+              </div>
+              <span id="uname-msg" class="field-hint hidden"></span>
+            </label>
           </div>
-        </fieldset>
-        <label class="auth-label" for="username">Username
-          <input class="auth-input" type="text" id="username" name="username" required autofocus autocomplete="username" placeholder="Your username">
-        </label>
-        <label class="auth-label" for="password">Password
-          <input class="auth-input" type="password" id="password" name="password" required autocomplete="current-password" placeholder="Your password">
-        </label>
-        <label class="auth-remember"><input type="checkbox" name="remember"><span>Keep me signed in</span></label>
-        <button type="submit" id="btn-submit-login" class="auth-submit">Sign in <i data-lucide="arrow-right" class="h-4 w-4"></i></button>
-      </form>
-      <p id="user-registration-link" class="auth-switch">New to Protecto? <a href="{{ url_for('auth.register') }}">Create an account</a></p>
+
+          <label class="auth-label" for="email">
+            Email address
+            <input class="auth-input" type="email" id="email" name="email"
+                   required autocomplete="email" placeholder="you@example.com">
+          </label>
+
+          <!-- Phone with country code -->
+          <label class="auth-label" for="phone">
+            <span class="label-row">
+              Phone number
+              <span id="phone-hint" class="field-hint-inline">India (+91) — 10 digits</span>
+            </span>
+            <div class="phone-field-group">
+              <div class="country-select-box">
+                <select id="country_code" name="country_code" class="country-code-select"
+                        onchange="changeCountry(this.value)">
+                  <option value="+91" selected>🇮🇳 +91</option>
+                  <option value="+1">🇺🇸 +1</option>
+                  <option value="+44">🇬🇧 +44</option>
+                  <option value="+971">🇦🇪 +971</option>
+                  <option value="+966">🇸🇦 +966</option>
+                  <option value="+61">🇦🇺 +61</option>
+                  <option value="+49">🇩🇪 +49</option>
+                  <option value="+33">🇫🇷 +33</option>
+                  <option value="+65">🇸🇬 +65</option>
+                  <option value="+81">🇯🇵 +81</option>
+                  <option value="+86">🇨🇳 +86</option>
+                  <option value="+55">🇧🇷 +55</option>
+                  <option value="+27">🇿🇦 +27</option>
+                  <option value="+60">🇲🇾 +60</option>
+                  <option value="+92">🇵🇰 +92</option>
+                  <option value="+880">🇧🇩 +880</option>
+                  <option value="+">🌐 Other</option>
+                </select>
+              </div>
+              <div class="phone-input-wrapper">
+                <input class="auth-input" type="tel" id="phone" name="phone"
+                       required maxlength="10" autocomplete="tel-national"
+                       placeholder="98765 43210" oninput="validatePhone(this)" onblur="validatePhone(this, true)">
+              </div>
+            </div>
+            <p id="phone-error" class="phone-error-msg hidden"></p>
+          </label>
+
+          <label class="auth-label" for="site_name">
+            Worksite or project
+            <input class="auth-input" type="text" id="site_name" name="site_name"
+                   required minlength="2" maxlength="120" autocomplete="organization"
+                   placeholder="Project or site name">
+          </label>
+
+          <div class="auth-field-row">
+            <label class="auth-label" for="password">
+              Password
+              <div class="auth-input-wrapper">
+                <input class="auth-input" type="password" id="password" name="password"
+                       required minlength="8" autocomplete="new-password"
+                       placeholder="At least 8 characters" oninput="ratePassword(this.value)">
+                <button type="button" class="auth-pwd-toggle" onclick="togglePwd('password', this)" title="Show / hide">
+                  <i data-lucide="eye" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </label>
+
+            <label class="auth-label" for="confirm_password">
+              <span class="label-row">
+                Confirm password
+                <span id="match-tag" class="field-hint-inline hidden"></span>
+              </span>
+              <div class="auth-input-wrapper">
+                <input class="auth-input" type="password" id="confirm_password" name="confirm_password"
+                       required minlength="8" autocomplete="new-password"
+                       placeholder="Enter it again" oninput="checkMatch(this.value)">
+                <button type="button" class="auth-pwd-toggle" onclick="togglePwd('confirm_password', this)" title="Show / hide">
+                  <i data-lucide="eye" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </label>
+          </div>
+
+          <!-- Password strength indicator -->
+          <div class="pwd-strength-wrap">
+            <div class="pwd-strength-bar-track">
+              <div id="pwd-bar" class="pwd-bar"></div>
+            </div>
+            <span id="pwd-label" class="pwd-label">Password strength</span>
+          </div>
+          <div id="pwd-checks" class="pwd-checks">
+            <span id="chk-len"  class="chk-item"><i data-lucide="circle" class="w-3 h-3"></i> 8+ chars</span>
+            <span id="chk-upp"  class="chk-item"><i data-lucide="circle" class="w-3 h-3"></i> Uppercase</span>
+            <span id="chk-num"  class="chk-item"><i data-lucide="circle" class="w-3 h-3"></i> Number</span>
+            <span id="chk-sym"  class="chk-item"><i data-lucide="circle" class="w-3 h-3"></i> Symbol</span>
+          </div>
+
+          <button type="submit" id="btn-submit-register" class="auth-submit">
+            Create account <i data-lucide="arrow-right" class="h-4 w-4"></i>
+          </button>
+        </form>
+
+        <p class="auth-switch">
+          Already have an account?
+          <button type="button" onclick="switchTab('login')" class="auth-link-btn">Sign in</button>
+        </p>
+      </div>
+
     </div>
   </div>
 </section>
-<script>
-  const accountTypeOptions = document.querySelectorAll('input[name="role"]');
-  const userRegistrationLink = document.getElementById('user-registration-link');
 
-  function updateRegistrationLink() {
-    const selectedType = document.querySelector('input[name="role"]:checked')?.value;
-    userRegistrationLink.hidden = selectedType !== 'user';
+<script>
+  /* ── Country phone rules ── */
+  const SPECS = {
+    "+91":  { name: "India", digits:[10], hint:"India (+91) — 10 digits", max:10 },
+    "+1":   { name: "USA / Canada", digits:[10], hint:"USA/Canada (+1) — 10 digits", max:10 },
+    "+44":  { name: "UK", digits:[10], hint:"UK (+44) — 10 digits", max:10 },
+    "+971": { name: "UAE", digits:[9], hint:"UAE (+971) — 9 digits", max:9 },
+    "+966": { name: "Saudi Arabia", digits:[9], hint:"Saudi (+966) — 9 digits", max:9 },
+    "+61":  { name: "Australia", digits:[9], hint:"Australia (+61) — 9 digits", max:9 },
+    "+49":  { name: "Germany", digits:[10,11], hint:"Germany (+49) — 10–11 digits", max:11 },
+    "+33":  { name: "France", digits:[9], hint:"France (+33) — 9 digits", max:9 },
+    "+65":  { name: "Singapore", digits:[8], hint:"Singapore (+65) — 8 digits", max:8 },
+    "+81":  { name: "Japan", digits:[10], hint:"Japan (+81) — 10 digits", max:10 },
+    "+86":  { name: "China", digits:[11], hint:"China (+86) — 11 digits", max:11 },
+    "+55":  { name: "Brazil", digits:[10,11], hint:"Brazil (+55) — 10–11 digits", max:11 },
+    "+27":  { name: "South Africa", digits:[9], hint:"South Africa (+27) — 9 digits", max:9 },
+    "+60":  { name: "Malaysia", digits:[9,10], hint:"Malaysia (+60) — 9–10 digits", max:10 },
+    "+92":  { name: "Pakistan", digits:[10], hint:"Pakistan (+92) — 10 digits", max:10 },
+    "+880": { name: "Bangladesh", digits:[10], hint:"Bangladesh (+880) — 10 digits", max:10 },
+    "+":    { name: "International", digits:[7,8,9,10,11,12,13,14,15], hint:"International — 7–15 digits", max:15 },
+  };
+
+  let cc = "+91";
+  let unameOk = true;
+  let unameTimer = null;
+
+  function getPhoneErrorMsg(code, digitCount) {
+    const s = SPECS[code] || SPECS["+"];
+    const countryName = s.name || "selected country";
+    if (s.digits.includes(digitCount)) {
+      return "";
+    }
+    if (digitCount === 0) {
+      const exp = s.digits.length === 1 ? `${s.digits[0]} digits` : `${s.digits[0]}–${s.digits[s.digits.length - 1]} digits`;
+      return `Please enter a ${exp} phone number for ${countryName} (${code}).`;
+    }
+    if (s.digits.length === 1) {
+      return `Please enter a valid ${s.digits[0]}-digit phone number for ${countryName} (${code}). (Currently entered ${digitCount} digit${digitCount === 1 ? '' : 's'}).`;
+    }
+    return `Please enter a valid ${s.digits[0]} to ${s.digits[s.digits.length - 1]}-digit phone number for ${countryName} (${code}). (Currently entered ${digitCount} digit${digitCount === 1 ? '' : 's'}).`;
   }
 
-  accountTypeOptions.forEach((option) => option.addEventListener('change', updateRegistrationLink));
-  updateRegistrationLink();
+  /* Tab switching */
+  function switchTab(tab) {
+    const isLogin = tab === "login";
+    document.getElementById("tab-btn-login").classList.toggle("active", isLogin);
+    document.getElementById("tab-btn-register").classList.toggle("active", !isLogin);
+    document.getElementById("panel-login").classList.toggle("hidden", !isLogin);
+    document.getElementById("panel-register").classList.toggle("hidden", isLogin);
+    const focus = isLogin ? "login-username" : "full_name";
+    document.getElementById(focus)?.focus();
+    history.replaceState(null, "", isLogin ? "#login" : "#register");
+    if (window.lucide) lucide.createIcons();
+  }
+
+  /* Password show/hide */
+  function togglePwd(id, btn) {
+    const inp = document.getElementById(id);
+    const isHidden = inp.type === "password";
+    inp.type = isHidden ? "text" : "password";
+    btn.querySelector("i")?.setAttribute("data-lucide", isHidden ? "eye-off" : "eye");
+    if (window.lucide) lucide.createIcons();
+  }
+
+  /* Country change */
+  function changeCountry(code) {
+    cc = code;
+    const s = SPECS[code] || SPECS["+"];
+    const phoneInput = document.getElementById("phone");
+    phoneInput.maxLength = s.max;
+    phoneInput.placeholder = s.max === 10 ? "98765 43210" : "—";
+    document.getElementById("phone-hint").textContent = s.hint;
+    validatePhone(phoneInput, phoneInput.value.length > 0);
+  }
+
+  /* Phone digit validation */
+  function validatePhone(inp, showError = false) {
+    const digits = inp.value.replace(/\D/g, "").slice(0, (SPECS[cc]||SPECS["+"]).max);
+    inp.value = digits;
+    const s = SPECS[cc] || SPECS["+"];
+    const ok = s.digits.includes(digits.length);
+    const errEl = document.getElementById("phone-error");
+    
+    if (ok) {
+      inp.classList.add("is-valid");
+      inp.classList.remove("is-invalid");
+      inp.setCustomValidity("");
+      if (errEl) {
+        errEl.textContent = "";
+        errEl.classList.add("hidden");
+      }
+    } else {
+      inp.classList.remove("is-valid");
+      const errorMsg = getPhoneErrorMsg(cc, digits.length);
+      inp.setCustomValidity(errorMsg);
+      if (showError || inp.dataset.touched === "true" || (digits.length > 0 && digits.length >= s.max)) {
+        inp.classList.add("is-invalid");
+        if (errEl) {
+          errEl.textContent = errorMsg;
+          errEl.classList.remove("hidden");
+        }
+      } else {
+        inp.classList.remove("is-invalid");
+        if (errEl) {
+          errEl.classList.add("hidden");
+        }
+      }
+    }
+  }
+
+  /* Real-time username check */
+  function checkUsername(val) {
+    const trimmed = val.trim();
+    const msg = document.getElementById("uname-msg");
+    const inp = document.getElementById("username");
+    const btn = document.getElementById("btn-submit-register");
+    clearTimeout(unameTimer);
+
+    if (!trimmed || trimmed.length < 3) {
+      msg.className = "field-hint hidden";
+      inp.classList.remove("is-valid", "is-invalid");
+      unameOk = trimmed.length === 0;
+      btn.disabled = !unameOk;
+      return;
+    }
+
+    unameTimer = setTimeout(() => {
+      fetch("/auth/check-username?username=" + encodeURIComponent(trimmed))
+        .then(r => r.json())
+        .then(d => {
+          if (d.exists) {
+            msg.textContent = "Username already taken, please choose another.";
+            msg.className = "field-hint err";
+            inp.classList.add("is-invalid"); inp.classList.remove("is-valid");
+            unameOk = false; btn.disabled = true;
+          } else {
+            msg.textContent = "Username is available.";
+            msg.className = "field-hint ok";
+            inp.classList.add("is-valid"); inp.classList.remove("is-invalid");
+            unameOk = true; btn.disabled = false;
+          }
+        })
+        .catch(() => { msg.className = "field-hint hidden"; });
+    }, 350);
+  }
+
+  /* Password strength */
+  function ratePassword(pwd) {
+    const hasLen = pwd.length >= 8;
+    const hasLong = pwd.length >= 12;
+    const hasUpp = /[A-Z]/.test(pwd);
+    const hasLow = /[a-z]/.test(pwd);
+    const hasNum = /[0-9]/.test(pwd);
+    const hasSym = /[^A-Za-z0-9]/.test(pwd);
+
+    tick("chk-len", hasLen);
+    tick("chk-upp", hasUpp);
+    tick("chk-num", hasNum);
+    tick("chk-sym", hasSym);
+
+    let score = [hasLen, hasLong, hasUpp, hasLow, hasNum, hasSym].filter(Boolean).length;
+    let label, cls;
+    if (!hasLen || score < 3)        { label = "Weak";        cls = "bar-weak"; }
+    else if (score >= 5 && pwd.length >= 10) { label = "Very strong"; cls = "bar-vstrong"; }
+    else                             { label = "Strong";      cls = "bar-strong"; }
+
+    document.getElementById("pwd-label").textContent = label;
+    const bar = document.getElementById("pwd-bar");
+    bar.className = "pwd-bar " + cls;
+    document.getElementById("reg-strength-input").value =
+      cls === "bar-weak" ? "weak" : cls === "bar-vstrong" ? "very_strong" : "strong";
+
+    checkMatch(document.getElementById("confirm_password")?.value || "");
+  }
+
+  function tick(id, ok) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.toggle("done", ok);
+    el.querySelector("i")?.setAttribute("data-lucide", ok ? "check-circle" : "circle");
+    if (window.lucide) lucide.createIcons();
+  }
+
+  /* Confirm password match */
+  function checkMatch(val) {
+    const pwd = document.getElementById("password")?.value || "";
+    const tag = document.getElementById("match-tag");
+    const inp = document.getElementById("confirm_password");
+    if (!val) { tag.className = "field-hint-inline hidden"; inp.classList.remove("is-valid","is-invalid"); return; }
+    const ok = pwd === val;
+    tag.textContent = ok ? "Matches" : "Doesn't match";
+    tag.className = "field-hint-inline " + (ok ? "ok" : "err");
+    inp.classList.toggle("is-valid", ok);
+    inp.classList.toggle("is-invalid", !ok);
+  }
+
+  /* Form gate */
+  function validateForm(e) {
+    if (!unameOk) {
+      e.preventDefault();
+      document.getElementById("username")?.focus();
+      return false;
+    }
+    const phoneInp = document.getElementById("phone");
+    const phone = phoneInp.value.replace(/\D/g, "");
+    const s = SPECS[cc] || SPECS["+"];
+    if (!s.digits.includes(phone.length)) {
+      e.preventDefault();
+      phoneInp.dataset.touched = "true";
+      validatePhone(phoneInp, true);
+      phoneInp.focus();
+      if (typeof phoneInp.reportValidity === "function") {
+        phoneInp.reportValidity();
+      }
+      return false;
+    }
+    const pwd = document.getElementById("password").value;
+    const conf = document.getElementById("confirm_password").value;
+    if (pwd !== conf) {
+      e.preventDefault();
+      document.getElementById("confirm_password")?.focus();
+      return false;
+    }
+    return true;
+  }
+
+  /* Init */
+  document.addEventListener("DOMContentLoaded", () => {
+    switchTab(location.hash === "#register" ? "register" : "login");
+    changeCountry("+91");
+    if (window.lucide) lucide.createIcons();
+  });
 </script>
+
+<style>
+  /* Keep all the core .auth-* CSS from style.css, just override specifics */
+  .auth-link-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--accent-primary);
+    font-weight: 700;
+    font-size: inherit;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+  .auth-link-btn:hover { color: var(--accent-hover); }
+
+  .label-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+
+  .field-hint {
+    font-size: 12px;
+    margin-top: 3px;
+    font-weight: 500;
+  }
+  .field-hint.ok   { color: #16a34a; }
+  .field-hint.err  { color: #dc2626; }
+  .field-hint.hidden { display: none; }
+
+  .field-hint-inline {
+    font-size: 11px;
+    font-weight: 500;
+    color: #71817a;
+  }
+  .field-hint-inline.ok  { color: #16a34a; }
+  .field-hint-inline.err { color: #dc2626; }
+  .field-hint-inline.hidden { display: none; }
+
+  /* Strength bar */
+  .pwd-strength-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: -4px;
+  }
+  .pwd-strength-bar-track {
+    flex: 1;
+    height: 5px;
+    background: #dde3da;
+    border-radius: 9999px;
+    overflow: hidden;
+  }
+  .pwd-bar {
+    height: 100%;
+    border-radius: 9999px;
+    width: 0;
+    transition: width 0.25s ease, background 0.25s ease;
+  }
+  .pwd-bar.bar-weak    { width: 30%; background: #ef4444; }
+  .pwd-bar.bar-strong  { width: 65%; background: #3b82f6; }
+  .pwd-bar.bar-vstrong { width: 100%; background: #22c55e; }
+  .pwd-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7b6f;
+    min-width: 72px;
+    text-align: right;
+  }
+
+  /* Criteria row */
+  .pwd-checks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    margin-top: -8px;
+  }
+  .chk-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: #90a099;
+    font-weight: 500;
+  }
+  .chk-item.done { color: #16a34a; }
+</style>
 {% endblock %}

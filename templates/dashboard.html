@@ -208,19 +208,19 @@
 
     <!-- Real-Time Breakdown Chips below video -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-1">
-      <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+      <div class="ppe-badge-chip p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
         <span class="text-slate-500 font-medium">Hardhats:</span>
         <span class="text-slate-900 font-bold font-tabular text-sm" id="badge-hardhat-count">-</span>
       </div>
-      <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+      <div class="ppe-badge-chip p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
         <span class="text-slate-500 font-medium">Vests:</span>
         <span class="text-slate-900 font-bold font-tabular text-sm" id="badge-vest-count">-</span>
       </div>
-      <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+      <div class="ppe-badge-chip p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
         <span class="text-slate-500 font-medium">Masks:</span>
         <span class="text-slate-900 font-bold font-tabular text-sm" id="badge-mask-count">-</span>
       </div>
-      <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+      <div class="ppe-badge-chip p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
         <span class="text-slate-500 font-medium">Gloves:</span>
         <span class="text-slate-900 font-bold font-tabular text-sm" id="badge-gloves-count">-</span>
       </div>
@@ -277,6 +277,19 @@
      data-demo-mode="{{ 'true' if demo_mode else 'false' }}"
      data-is-admin="{{ 'true' if (current_user.is_authenticated and current_user.is_admin) else 'false' }}"
      hidden></div>
+
+<style>
+  /* PPE badge chip flash animation on value change */
+  @keyframes ppe-value-flash {
+    0%   { background-color: #ecfdf5; border-color: #6ee7b7; }
+    60%  { background-color: #d1fae5; border-color: #34d399; }
+    100% { background-color: #f8fafc; border-color: #e2e8f0; }
+  }
+  .ppe-badge-chip { transition: border-color 0.2s ease; }
+  .ppe-badge-chip.ppe-flash {
+    animation: ppe-value-flash 0.55s ease-out forwards;
+  }
+</style>
 
 <script>
   const _cfg = document.getElementById('dashboard-runtime-config');
@@ -340,16 +353,12 @@
             }
           }
 
-          // Update breakdown counts
+          // Update breakdown counts with fluctuating animation
           if (m.wearing) {
-            const badgeHardhat = document.getElementById('badge-hardhat-count');
-            const badgeVest = document.getElementById('badge-vest-count');
-            const badgeMask = document.getElementById('badge-mask-count');
-            const badgeGloves = document.getElementById('badge-gloves-count');
-            if (badgeHardhat) badgeHardhat.textContent = (m.wearing['Hardhat'] || 0) + ' ✓';
-            if (badgeVest) badgeVest.textContent = (m.wearing['Safety Vest'] || 0) + ' ✓';
-            if (badgeMask) badgeMask.textContent = (m.wearing['Mask'] || 0) + ' ✓';
-            if (badgeGloves) badgeGloves.textContent = (m.wearing['Gloves'] || 0) + ' ✓';
+            updatePpeBadge('badge-hardhat-count', m.wearing['Hardhat'] || 0);
+            updatePpeBadge('badge-vest-count',    m.wearing['Safety Vest'] || 0);
+            updatePpeBadge('badge-mask-count',    m.wearing['Mask'] || 0);
+            updatePpeBadge('badge-gloves-count',  m.wearing['Gloves'] || 0);
           }
         } else if (payload.type === 'violation') {
           handleViolationAlert(payload.data);
@@ -358,6 +367,40 @@
         console.error("SSE parse error", e);
       }
     };
+  }
+
+  // PPE badge fluctuation helper — smoothly animates count changes and flashes the chip
+  function updatePpeBadge(id, newVal) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const prevText = el.textContent.replace(/[^0-9]/g, '');
+    const prevVal  = prevText === '' ? 0 : parseInt(prevText, 10);
+    if (prevVal === newVal && el.textContent !== '-') return; // no change
+
+    // Animate the count
+    let frame = 0;
+    const frames = 18; // ~300 ms at 60 fps
+    const diff   = newVal - prevVal;
+    const tick = () => {
+      frame++;
+      const progress = frame / frames;
+      // Ease-out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const cur   = Math.round(prevVal + diff * eased);
+      el.textContent = cur + ' ✓';
+      if (frame < frames) requestAnimationFrame(tick);
+      else el.textContent = newVal + ' ✓';
+    };
+    requestAnimationFrame(tick);
+
+    // Flash the parent chip to signal data change
+    const chip = el.closest('.ppe-badge-chip') || el.parentElement;
+    if (chip) {
+      chip.classList.remove('ppe-flash');
+      // Force reflow so re-adding restarts animation
+      void chip.offsetWidth;
+      chip.classList.add('ppe-flash');
+    }
   }
 
   // Handle live violation alert

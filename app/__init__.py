@@ -18,6 +18,7 @@ def create_app(config_class=Config):
         static_folder=str(base_dir / "static"),
     )
     app.config.from_object(config_class)
+    app.config["TEMPLATES_AUTO_RELOAD"] = True
 
     # Ensure necessary runtime directories exist
     instance_dir = base_dir / "instance"

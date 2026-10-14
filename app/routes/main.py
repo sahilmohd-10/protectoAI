@@ -103,3 +103,20 @@ def users_page():
 def serve_snapshot(filename):
     snapshots_dir = Path(current_app.config["SNAPSHOT_FOLDER"])
     return send_from_directory(snapshots_dir, filename)
+
+
+@main_bp.route("/login")
+def login_redirect():
+    """Convenience redirect for /login -> /auth/login."""
+    next_url = request.args.get("next")
+    if next_url:
+        return redirect(url_for("auth.login", next=next_url))
+    return redirect(url_for("auth.login"))
+
+
+@main_bp.route("/register")
+def register_redirect():
+    """Convenience redirect for /register -> /auth/register."""
+    return redirect(url_for("auth.register"))
+
+
