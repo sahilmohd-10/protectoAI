@@ -2,7 +2,7 @@ import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from secrets import token_urlsafe
-from flask import Flask
+from flask import Flask, send_from_directory
 from app.config import Config
 from app.extensions import db, login_manager
 from sqlalchemy import inspect, text
@@ -48,6 +48,17 @@ def create_app(config_class=Config):
     app.register_blueprint(main_bp)
     app.register_blueprint(api_bp, url_prefix="/api")
     app.register_blueprint(video_bp)
+
+    @app.get("/service-worker.js")
+    def service_worker():
+        response = send_from_directory(
+            app.static_folder,
+            "service-worker.js",
+            mimetype="application/javascript",
+        )
+        response.headers["Service-Worker-Allowed"] = "/"
+        response.headers["Cache-Control"] = "no-cache"
+        return response
 
     @app.context_processor
     def inject_runtime_flags():

@@ -1,0 +1,27 @@
+{
+  "id": "/",
+  "name": "Protecto.AI | Site Safety Monitoring",
+  "short_name": "Protecto",
+  "description": "Monitor site safety, PPE compliance, and incident records.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#eef1eb",
+  "theme_color": "#285843",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "/static/pwa-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/pwa-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

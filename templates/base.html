@@ -1,12 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Protecto.AI — Industrial Safety Intelligence{% endblock %}</title>
 
-  <!-- Favicon SVG -->
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23116dff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'/></svg>">
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='pwa-icon.svg') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='pwa-icon-192.png') }}">
+  <meta name="theme-color" content="#285843">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -37,11 +42,14 @@
 
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+  <script defer src="{{ url_for('static', filename='pwa.js') }}"></script>
 
   <!-- Design System CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body class="bg-[#f5f6f4] text-slate-900 min-h-screen flex flex-col antialiased selection:bg-emerald-800 selection:text-white">
+
+<body
+  class="bg-[#f5f6f4] text-slate-900 min-h-screen flex flex-col antialiased selection:bg-emerald-800 selection:text-white">
 
   <!-- Audio Tone Synthesizer for Subtle Alert Chimes -->
   <script>
@@ -61,7 +69,7 @@
         gain.connect(audioCtx.destination);
         osc.start();
         osc.stop(audioCtx.currentTime + 0.25);
-      } catch (e) {}
+      } catch (e) { }
     }
     function toggleSoundAlerts() {
       audioAlertsEnabled = !audioAlertsEnabled;
@@ -73,21 +81,25 @@
   <!-- Toast Notification Container -->
   <div id="toast-container"></div>
   {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      <div class="fixed right-5 top-20 z-[1100] space-y-2" aria-live="polite">
-        {% for category, message in messages %}
-          <div class="border bg-white px-4 py-3 text-sm shadow-lg {% if category == 'danger' %}border-rose-300 text-rose-800{% elif category == 'success' %}border-emerald-300 text-emerald-900{% else %}border-slate-300 text-slate-800{% endif %}">{{ message }}</div>
-        {% endfor %}
-      </div>
-    {% endif %}
+  {% if messages %}
+  <div class="fixed right-5 top-20 z-[1100] space-y-2" aria-live="polite">
+    {% for category, message in messages %}
+    <div
+      class="border bg-white px-4 py-3 text-sm shadow-lg {% if category == 'danger' %}border-rose-300 text-rose-800{% elif category == 'success' %}border-emerald-300 text-emerald-900{% else %}border-slate-300 text-slate-800{% endif %}">
+      {{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
   {% endwith %}
 
   <!-- Wix-Style Clean Top Navigation Bar -->
-  <header class="workspace-header h-16 bg-white border-b border-slate-200/80 sticky top-0 z-40 px-6 sm:px-10 flex items-center justify-between shadow-sm">
+  <header
+    class="workspace-header h-16 bg-white border-b border-slate-200/80 sticky top-0 z-40 px-6 sm:px-10 flex items-center justify-between shadow-sm">
     <div class="flex items-center gap-8">
       <!-- Logo in bold typography -->
       <a href="{{ url_for('main.dashboard') }}" class="flex items-center gap-2 group">
-        <span class="text-xl font-black tracking-tighter text-black">Protecto<span class="text-wixBlue">.AI</span></span>
+        <span class="text-xl font-black tracking-tighter text-black">Protecto<span
+            class="text-wixBlue">.AI</span></span>
       </a>
 
     </div>
@@ -95,49 +107,56 @@
     <!-- Right Side Header Controls -->
     <div class="flex items-center gap-3">
       {% if current_user.is_authenticated %}
-        <!-- Quick Search (Ctrl+K) -->
-        <button onclick="openCmdPalette()"
-                class="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-slate-500 hover:text-black hover:border-slate-300 text-xs transition-colors font-mono">
-          <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400"></i>
-          <span class="font-sans">Search...</span>
-          <kbd class="px-1.5 py-0.5 rounded bg-white border border-slate-200 text-[10px]">⌘K</kbd>
-        </button>
+      <!-- Quick Search (Ctrl+K) -->
+      <button onclick="openCmdPalette()"
+        class="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-slate-500 hover:text-black hover:border-slate-300 text-xs transition-colors font-mono">
+        <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400"></i>
+        <span class="font-sans">Search...</span>
+        <kbd class="px-1.5 py-0.5 rounded bg-white border border-slate-200 text-[10px]">⌘K</kbd>
+      </button>
 
-        <!-- Live Telemetry Status Pill -->
-        <div id="workspace-status" class="flex items-center gap-1.5 px-3 py-1 rounded border border-slate-200 bg-slate-50 text-xs font-medium text-slate-700">
-          <span id="workspace-status-dot" class="h-2 w-2 rounded-full bg-slate-400"></span>
-          <span id="workspace-status-label">Checking</span>
+      <!-- Live Telemetry Status Pill -->
+      <div id="workspace-status"
+        class="flex items-center gap-1.5 px-3 py-1 rounded border border-slate-200 bg-slate-50 text-xs font-medium text-slate-700">
+        <span id="workspace-status-dot" class="h-2 w-2 rounded-full bg-slate-400"></span>
+        <span id="workspace-status-label">Checking</span>
+      </div>
+
+      <!-- Audio Alert Toggle -->
+      <button onclick="toggleSoundAlerts()"
+        class="p-2 rounded-full hover:bg-slate-100 text-slate-500 hover:text-black transition-colors"
+        title="Toggle audio alert chime">
+        <i data-lucide="volume-2" class="w-4 h-4"></i>
+      </button>
+
+      <!-- User Avatar & Sign Out -->
+      <div class="flex items-center gap-2 pl-2 border-l border-slate-200">
+        <div class="w-7 h-7 rounded-full bg-blue-100 text-wixBlue flex items-center justify-center font-bold text-xs"
+          title="{{ current_user.username }}">
+          {{ current_user.username[0]|upper }}
+        </div>
+        <div class="hidden sm:flex flex-col items-start leading-tight">
+          <span class="text-xs font-bold text-slate-800">{{ current_user.username }}</span>
+          {% if current_user.is_admin %}
+          <span class="text-[9px] font-extrabold text-wixBlue uppercase tracking-wide flex items-center gap-0.5">
+            <i data-lucide="shield" class="w-2.5 h-2.5"></i> Admin
+          </span>
+          {% else %}
+          <span class="text-[9px] font-medium text-slate-400 uppercase tracking-wide flex items-center gap-0.5">
+            <i data-lucide="user" class="w-2.5 h-2.5"></i> User
+          </span>
+          {% endif %}
         </div>
 
-        <!-- Audio Alert Toggle -->
-        <button onclick="toggleSoundAlerts()" class="p-2 rounded-full hover:bg-slate-100 text-slate-500 hover:text-black transition-colors" title="Toggle audio alert chime">
-          <i data-lucide="volume-2" class="w-4 h-4"></i>
-        </button>
-
-        <!-- User Avatar & Sign Out -->
-        <div class="flex items-center gap-2 pl-2 border-l border-slate-200">
-          <div class="w-7 h-7 rounded-full bg-blue-100 text-wixBlue flex items-center justify-center font-bold text-xs" title="{{ current_user.username }}">
-            {{ current_user.username[0]|upper }}
-          </div>
-          <div class="hidden sm:flex flex-col items-start leading-tight">
-            <span class="text-xs font-bold text-slate-800">{{ current_user.username }}</span>
-            {% if current_user.is_admin %}
-              <span class="text-[9px] font-extrabold text-wixBlue uppercase tracking-wide flex items-center gap-0.5">
-                <i data-lucide="shield" class="w-2.5 h-2.5"></i> Admin
-              </span>
-            {% else %}
-              <span class="text-[9px] font-medium text-slate-400 uppercase tracking-wide flex items-center gap-0.5">
-                <i data-lucide="user" class="w-2.5 h-2.5"></i> User
-              </span>
-            {% endif %}
-          </div>
-
-          <a href="{{ url_for('auth.logout') }}" class="p-1.5 rounded-full hover:bg-red-50 text-slate-400 hover:text-rose-600 transition-colors" title="Sign out">
-            <i data-lucide="log-out" class="w-4 h-4"></i>
-          </a>
-        </div>
+        <a href="{{ url_for('auth.logout') }}"
+          class="p-1.5 rounded-full hover:bg-red-50 text-slate-400 hover:text-rose-600 transition-colors"
+          title="Sign out">
+          <i data-lucide="log-out" class="w-4 h-4"></i>
+        </a>
+      </div>
       {% else %}
-        <a href="{{ url_for('main.dashboard') }}" class="text-xs font-semibold text-slate-700 hover:text-black px-3 py-2">Back to site</a>
+      <a href="{{ url_for('main.dashboard') }}"
+        class="text-xs font-semibold text-slate-700 hover:text-black px-3 py-2">Back to site</a>
       {% endif %}
     </div>
   </header>
@@ -147,25 +166,40 @@
   </main>
 
   {% if current_user.is_authenticated %}
-  <nav class="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 shadow-[0_-4px_16px_rgba(15,23,42,0.05)] backdrop-blur" aria-label="Workspace navigation">
+  <nav
+    class="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 shadow-[0_-4px_16px_rgba(15,23,42,0.05)] backdrop-blur"
+    aria-label="Workspace navigation">
     <div class="mx-auto flex max-w-3xl items-stretch justify-center gap-1 overflow-x-auto px-2 py-1.5 sm:gap-3">
-      <a href="{{ url_for('main.dashboard') }}" class="flex min-w-[56px] flex-1 flex-col items-center justify-center gap-1 px-1 py-1.5 text-slate-500 transition-colors hover:bg-slate-50 hover:text-emerald-900 {% if request.endpoint == 'main.dashboard' %}text-emerald-900{% endif %}" {% if request.endpoint == 'main.dashboard' %}aria-current="page"{% endif %}>
+      <a href="{{ url_for('main.dashboard') }}"
+        class="flex min-w-[56px] flex-1 flex-col items-center justify-center gap-1 px-1 py-1.5 text-slate-500 transition-colors hover:bg-slate-50 hover:text-emerald-900 {% if request.endpoint == 'main.dashboard' %}text-emerald-900{% endif %}"
+        {% if request.endpoint=='main.dashboard' %}aria-current="page" {% endif %}>
         <i data-lucide="video" class="h-4 w-4"></i><span class="text-[10px] leading-tight">Live</span>
       </a>
-      <a href="{{ url_for('main.violations_page') }}" class="flex min-w-[56px] flex-1 flex-col items-center justify-center gap-1 px-1 py-1.5 text-slate-500 transition-colors hover:bg-slate-50 hover:text-emerald-900 {% if request.endpoint == 'main.violations_page' %}text-emerald-900{% endif %}" {% if request.endpoint == 'main.violations_page' %}aria-current="page"{% endif %}>
+      <a href="{{ url_for('main.violations_page') }}"
+        class="flex min-w-[56px] flex-1 flex-col items-center justify-center gap-1 px-1 py-1.5 text-slate-500 transition-colors hover:bg-slate-50 hover:text-emerald-900 {% if request.endpoint == 'main.violations_page' %}text-emerald-900{% endif %}"
+        {% if request.endpoint=='main.violations_page' %}aria-current="page" {% endif %}>
         <i data-lucide="shield-alert" class="h-4 w-4"></i><span class="text-[10px] leading-tight">Violations</span>
       </a>
-      <a href="{{ url_for('main.analytics') }}" class="flex min-w-[56px] flex-1 flex-col items-center justify-center gap-1 px-1 py-1.5 text-slate-500 transition-colors hover:bg-slate-50 hover:text-emerald-900 {% if request.endpoint == 'main.analytics' %}text-emerald-900{% endif %}" {% if request.endpoint == 'main.analytics' %}aria-current="page"{% endif %}>
-        <i data-lucide="chart-no-axes-combined" class="h-4 w-4"></i><span class="text-[10px] leading-tight">Analytics</span>
+      <a href="{{ url_for('main.analytics') }}"
+        class="flex min-w-[56px] flex-1 flex-col items-center justify-center gap-1 px-1 py-1.5 text-slate-500 transition-colors hover:bg-slate-50 hover:text-emerald-900 {% if request.endpoint == 'main.analytics' %}text-emerald-900{% endif %}"
+        {% if request.endpoint=='main.analytics' %}aria-current="page" {% endif %}>
+        <i data-lucide="chart-no-axes-combined" class="h-4 w-4"></i><span
+          class="text-[10px] leading-tight">Analytics</span>
       </a>
-      <a href="{{ url_for('main.zones') }}" class="flex min-w-[56px] flex-1 flex-col items-center justify-center gap-1 px-1 py-1.5 text-slate-500 transition-colors hover:bg-slate-50 hover:text-emerald-900 {% if request.endpoint == 'main.zones' %}text-emerald-900{% endif %}" {% if request.endpoint == 'main.zones' %}aria-current="page"{% endif %}>
+      <a href="{{ url_for('main.zones') }}"
+        class="flex min-w-[56px] flex-1 flex-col items-center justify-center gap-1 px-1 py-1.5 text-slate-500 transition-colors hover:bg-slate-50 hover:text-emerald-900 {% if request.endpoint == 'main.zones' %}text-emerald-900{% endif %}"
+        {% if request.endpoint=='main.zones' %}aria-current="page" {% endif %}>
         <i data-lucide="scan-line" class="h-4 w-4"></i><span class="text-[10px] leading-tight">Zones</span>
       </a>
-      <a href="{{ url_for('main.settings_page') }}" class="flex min-w-[56px] flex-1 flex-col items-center justify-center gap-1 px-1 py-1.5 text-slate-500 transition-colors hover:bg-slate-50 hover:text-emerald-900 {% if request.endpoint == 'main.settings_page' %}text-emerald-900{% endif %}" {% if request.endpoint == 'main.settings_page' %}aria-current="page"{% endif %}>
+      <a href="{{ url_for('main.settings_page') }}"
+        class="flex min-w-[56px] flex-1 flex-col items-center justify-center gap-1 px-1 py-1.5 text-slate-500 transition-colors hover:bg-slate-50 hover:text-emerald-900 {% if request.endpoint == 'main.settings_page' %}text-emerald-900{% endif %}"
+        {% if request.endpoint=='main.settings_page' %}aria-current="page" {% endif %}>
         <i data-lucide="settings-2" class="h-4 w-4"></i><span class="text-[10px] leading-tight">Settings</span>
       </a>
       {% if current_user.is_admin %}
-      <a href="{{ url_for('main.users_page') }}" class="flex min-w-[56px] flex-1 flex-col items-center justify-center gap-1 px-1 py-1.5 text-slate-500 transition-colors hover:bg-slate-50 hover:text-emerald-900 {% if request.endpoint == 'main.users_page' %}text-emerald-900{% endif %}" {% if request.endpoint == 'main.users_page' %}aria-current="page"{% endif %}>
+      <a href="{{ url_for('main.users_page') }}"
+        class="flex min-w-[56px] flex-1 flex-col items-center justify-center gap-1 px-1 py-1.5 text-slate-500 transition-colors hover:bg-slate-50 hover:text-emerald-900 {% if request.endpoint == 'main.users_page' %}text-emerald-900{% endif %}"
+        {% if request.endpoint=='main.users_page' %}aria-current="page" {% endif %}>
         <i data-lucide="users" class="h-4 w-4"></i><span class="text-[10px] leading-tight">Team</span>
       </a>
       {% endif %}
@@ -184,14 +218,16 @@
         </h3>
         <p class="text-[11px] text-slate-500 font-mono mt-0.5" id="drawer-subtitle">Track #-- • Camera --</p>
       </div>
-      <button onclick="closeViolationDrawer()" class="text-slate-400 hover:text-slate-700 p-1.5 rounded-full hover:bg-slate-200">
+      <button onclick="closeViolationDrawer()"
+        class="text-slate-400 hover:text-slate-700 p-1.5 rounded-full hover:bg-slate-200">
         <i data-lucide="x" class="w-4 h-4"></i>
       </button>
     </div>
 
     <div class="p-6 overflow-y-auto space-y-5 flex-1">
       <!-- Snapshot Large Preview -->
-      <div class="aspect-video bg-slate-900 rounded-xl overflow-hidden border border-slate-200 flex items-center justify-center shadow-sm">
+      <div
+        class="aspect-video bg-slate-900 rounded-xl overflow-hidden border border-slate-200 flex items-center justify-center shadow-sm">
         <img id="drawer-img" src="" alt="Violation Snapshot" class="w-full h-full object-contain">
       </div>
 
@@ -221,11 +257,13 @@
     </div>
 
     <div class="p-4 border-t border-slate-100 bg-slate-50/50 flex items-center gap-2.5">
-      <button id="resolve-current-violation" onclick="resolveCurrentViolation()" class="flex-1 py-2.5 rounded-full bg-wixBlue text-white text-xs font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-1.5 shadow-sm">
+      <button id="resolve-current-violation" onclick="resolveCurrentViolation()"
+        class="flex-1 py-2.5 rounded-full bg-wixBlue text-white text-xs font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-1.5 shadow-sm">
         <i data-lucide="check" class="w-3.5 h-3.5"></i>
         <span>Mark Resolved</span>
       </button>
-      <button onclick="closeViolationDrawer()" class="px-5 py-2.5 rounded-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium">
+      <button onclick="closeViolationDrawer()"
+        class="px-5 py-2.5 rounded-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium">
         Dismiss
       </button>
     </div>
@@ -237,18 +275,21 @@
       <div class="p-3.5 border-b border-slate-100 flex items-center gap-2.5 bg-slate-50">
         <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
         <input type="text" id="cmd-input" placeholder="Type a command or navigate..."
-               class="bg-transparent border-0 outline-none text-xs text-slate-900 placeholder-slate-400 w-full"
-               oninput="filterCmdList()">
-        <kbd class="px-1.5 py-0.5 rounded bg-white border border-slate-200 text-[10px] text-slate-400 font-mono">ESC</kbd>
+          class="bg-transparent border-0 outline-none text-xs text-slate-900 placeholder-slate-400 w-full"
+          oninput="filterCmdList()">
+        <kbd
+          class="px-1.5 py-0.5 rounded bg-white border border-slate-200 text-[10px] text-slate-400 font-mono">ESC</kbd>
       </div>
 
       <div class="p-2.5 max-h-72 overflow-y-auto space-y-1 text-xs" id="cmd-list">
         <div class="px-2 py-1 text-[10px] text-slate-400 uppercase font-mono">Navigation</div>
-        <a href="{{ url_for('main.dashboard') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-700 hover:text-black">
+        <a href="{{ url_for('main.dashboard') }}"
+          class="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-700 hover:text-black">
           <i data-lucide="video" class="w-4 h-4 text-wixBlue"></i>
           <span>Live Camera Feed</span>
         </a>
-        <a href="{{ url_for('main.violations_page') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-700 hover:text-black">
+        <a href="{{ url_for('main.violations_page') }}"
+          class="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-700 hover:text-black">
           <i data-lucide="shield-alert" class="w-4 h-4 text-wixBlue"></i>
           <span>Violations Audit Log</span>
         </a>
@@ -429,4 +470,5 @@
   </script>
 
 </body>
+
 </html>

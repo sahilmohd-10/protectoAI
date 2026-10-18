@@ -120,3 +120,11 @@ def register_redirect():
     return redirect(url_for("auth.register"))
 
 
+@main_bp.route("/landing")
+@main_bp.route("/home")
+def landing_page():
+    """Explicit landing page in Supaste template."""
+    return render_template("home.html")
+
+
+
