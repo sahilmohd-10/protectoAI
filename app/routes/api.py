@@ -51,9 +51,11 @@ def live_events():
         return jsonify({"status": "disabled", "message": "Live events are disabled in demo mode."}), 403
 
     def event_stream():
-        last_sent_count = 0
+        # Initialize to current count so previous historical violations are not re-triggered upon opening the camera
+        last_sent_count = len(detector.recent_violations)
         while True:
             # 1. Push metrics update
+
             metrics_payload = json.dumps({"type": "metrics", "data": detector.metrics})
             yield f"data: {metrics_payload}\n\n"
 
@@ -197,7 +199,8 @@ def handle_cameras():
         db.session.commit()
         return jsonify({"status": "success", "camera": cam.to_dict()})
 
-    cameras = Camera.query.order_by(Camera.id.asc()).all() if current_app.config["DEMO_MODE"] else Camera.sync_connected_cameras()
+    force_scan = request.args.get("force", "false").lower() in ("1", "true")
+    cameras = Camera.query.order_by(Camera.id.asc()).all() if current_app.config["DEMO_MODE"] else Camera.sync_connected_cameras(force=force_scan)
     return jsonify({
         "status": "success",
         "cameras": [camera.to_dict() for camera in cameras],

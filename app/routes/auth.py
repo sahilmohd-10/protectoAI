@@ -434,16 +434,10 @@ def login():
             next_page = request.args.get("next")
             return redirect(next_page or url_for("main.dashboard"))
         else:
-            if not user:
-                flash("No account found with this username, email, or phone number.", "danger")
-            elif not user.check_password(password):
-                flash("Incorrect password. Please verify and try again.", "danger")
-            elif not role_matches:
-                flash(f"Account '{user.username}' is registered as a {user.role.title()}, not {selected_role.title()}.", "danger")
-            else:
-                flash("Invalid login credentials.", "danger")
+            flash("Invalid credentials. Please verify your details and try again.", "danger")
 
     return render_template("login.html", country_specs=COUNTRY_PHONE_SPECS)
+
 
 
 @auth_bp.route("/register", methods=["GET", "POST"])
@@ -499,9 +493,15 @@ def register():
 @auth_bp.route("/logout")
 @login_required
 def logout():
+    try:
+        from app.detector.ppe_detector import detector
+        detector.stop()
+    except Exception as err:
+        print(f"[!] Error stopping camera on logout: {err}")
     logout_user()
-    flash("You have been logged out.", "info")
+    flash("You have been signed out.", "info")
     return redirect(url_for("auth.login"))
+
 
 
 # -------------------------------------------------------------

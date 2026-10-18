@@ -87,6 +87,16 @@ class PPEDetector:
         self._smoothed_compliance: Optional[float] = 100.0
         self._app_context_callback = None
 
+        # Stream viewer & camera auto-release tracking
+        self._active_stream_viewers = 0
+        self._last_viewer_disconnect_time = 0.0
+
+        # Anti-false-alarm filters & warmup grace period
+        self.WARMUP_SECONDS = 4.0
+        self.CONSECUTIVE_FRAMES_REQUIRED = 8
+        self._detection_start_time = 0.0
+        self._violation_consecutive_counts: Dict[Tuple[int, str], int] = {}
+
     def set_app_context_callback(self, callback):
         """Pass a callback function that returns Flask app context."""
         self._app_context_callback = callback
@@ -150,8 +160,13 @@ class PPEDetector:
     def _trigger_violation(self, track_id: int, violation_type: str, conf: float, frame_copy):
         """
         Handles debounce, database logging, snapshot saving, and real-time events.
+        Suppresses false alerts during the initial warmup stabilization window.
         """
         now = time.time()
+        # Suppress alerts during camera startup / warmup window
+        if (now - self._detection_start_time) < self.WARMUP_SECONDS:
+            return
+
         key = (track_id, violation_type)
         last_time = self.last_alert_time.get(key, 0)
 
@@ -227,7 +242,9 @@ class PPEDetector:
 
             self.person_states.clear()
             self._track_remap.clear()
+            self._violation_consecutive_counts.clear()
             self._smoothed_compliance = 100.0
+            self._detection_start_time = time.time()
             self._running = True
             self.metrics["is_running"] = True
             self.metrics["compliance_rate"] = 100.0
@@ -243,7 +260,7 @@ class PPEDetector:
             print(f"[+] Detection started on source: {self.source} (run #{current_run_id})")
 
     def stop(self):
-        """Stops the detection thread gracefully."""
+        """Stops the detection thread gracefully and completely releases hardware."""
         self._running = False
         if hasattr(self, 'cap') and self.cap is not None:
             try:
@@ -253,13 +270,15 @@ class PPEDetector:
             self.cap = None
 
         if self._thread and self._thread.is_alive():
-            self._thread.join(timeout=1.5)
+            if threading.current_thread() != self._thread:
+                self._thread.join(timeout=1.5)
             self._thread = None
 
         self.metrics["is_running"] = False
         with self._frame_lock:
             self.current_jpeg = None
-        print("[+] Detection stopped.")
+            self.current_frame = None
+        print("[+] Detection stopped and camera hardware released.")
 
     def is_running(self) -> bool:
         return self._running
@@ -341,12 +360,12 @@ class PPEDetector:
 
         if cap is None or not cap.isOpened():
             print(f"[!] Could not open video source: {self.source}")
-            err_frame = np.zeros((480, 720, 3), dtype=np.uint8)
-            cv2.putText(err_frame, f"Error: Cannot Open Source '{self.source}'", (60, 220),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.75, (54, 67, 244), 2)
-            cv2.putText(err_frame, "Please verify webcam or choose demo video in dropdown", (80, 260),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.55, (160, 160, 160), 1)
-            _, buf = cv2.imencode(".jpg", err_frame)
+            standby_frame = np.zeros((480, 720, 3), dtype=np.uint8)
+            cv2.putText(standby_frame, f"Camera Source '{self.source}' Offline", (140, 220),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.75, (200, 200, 200), 2)
+            cv2.putText(standby_frame, "Please connect a webcam or choose demo video in dropdown", (90, 260),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.55, (130, 130, 130), 1)
+            _, buf = cv2.imencode(".jpg", standby_frame)
             if self._run_id == run_id:
                 with self._frame_lock:
                     self.current_jpeg = buf.tobytes()
@@ -364,6 +383,11 @@ class PPEDetector:
 
         try:
             while self._running and self._run_id == run_id:
+                # Auto-release camera hardware if all browser tabs/viewers closed
+                if self._active_stream_viewers == 0 and (time.time() - self._detection_start_time > 8.0):
+                    print("[*] No active viewers on stream. Terminating camera capture to release hardware.")
+                    break
+
                 success, frame = cap.read()
                 if not success:
                     # If reading a file, loop back to start reliably for continuous playback
@@ -464,6 +488,9 @@ class PPEDetector:
                                 if label in self.PPE_ITEMS:
                                     self.person_states[tid]["ppe"][label] = True
                                     self.person_states[tid]["no"][label] = False
+                                    # Reset consecutive violation counter when compliant gear is observed
+                                    self._violation_consecutive_counts[(tid, label)] = 0
+
                                     cv2.rectangle(annotated, (x1, y1), (x2, y2), COLOR_SAFE, 2)
                                     cv2.putText(annotated, f"{label} {conf:.2f}", (x1, max(20, y1 - 6)),
                                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, COLOR_SAFE, 2)
@@ -472,11 +499,17 @@ class PPEDetector:
                                     self.person_states[tid]["no"][base] = True
                                     self.person_states[tid]["ppe"][base] = False
 
+                                    v_key = (tid, base)
+                                    cur_count = self._violation_consecutive_counts.get(v_key, 0) + 1
+                                    self._violation_consecutive_counts[v_key] = cur_count
+
                                     cv2.rectangle(annotated, (x1, y1), (x2, y2), COLOR_DANGER, 2)
                                     cv2.putText(annotated, f"NO {base}! {conf:.2f}", (x1, max(20, y1 - 6)),
                                                 cv2.FONT_HERSHEY_SIMPLEX, 0.55, COLOR_DANGER, 2)
 
-                                    self._trigger_violation(tid, base, conf, frame)
+                                    # Trigger violation ONLY after consecutive verification frames and solid confidence
+                                    if cur_count >= self.CONSECUTIVE_FRAMES_REQUIRED and conf >= 0.35:
+                                        self._trigger_violation(tid, base, conf, frame)
 
                 # Real-time breakdown counts for active visible workers
                 current_wearing = {k: 0 for k in self.PPE_ITEMS}
@@ -558,27 +591,39 @@ class PPEDetector:
     def generate_mjpeg_frames(self, demo_mode=False):
         """Generator function yielding multipart MJPEG frames for HTTP stream."""
         placeholder = None
-        while True:
-            with self._frame_lock:
-                frame_bytes = self.current_jpeg
+        with self._lock:
+            self._active_stream_viewers += 1
+            print(f"[+] Client connected to stream. Active viewers: {self._active_stream_viewers}")
 
-            if frame_bytes is None:
-                # Generate a sleek placeholder frame if detector hasn't started yet
-                if placeholder is None:
-                    blank = np.zeros((480, 720, 3), dtype=np.uint8)
-                    title = "Protecto.AI - Stream Inactive"
-                    subtitle = "Click 'Start Detection' or choose a demo video to begin"
-                    cv2.putText(blank, title, (145, 220),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.75, (100, 100, 100), 2)
-                    cv2.putText(blank, subtitle, (100, 260),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.55, (70, 70, 70), 1)
-                    _, buf = cv2.imencode(".jpg", blank)
-                    placeholder = buf.tobytes()
-                frame_bytes = placeholder
+        try:
+            while True:
+                with self._frame_lock:
+                    frame_bytes = self.current_jpeg
 
-            yield (b"--frame\r\n"
-                   b"Content-Type: image/jpeg\r\n\r\n" + frame_bytes + b"\r\n")
-            time.sleep(1.0 if demo_mode else 0.04)
+                if frame_bytes is None:
+                    # Generate a sleek placeholder frame if detector hasn't started yet
+                    if placeholder is None:
+                        blank = np.zeros((480, 720, 3), dtype=np.uint8)
+                        title = "Protecto.AI - Stream Standby"
+                        subtitle = "Select camera source or click 'Start Detection' to begin"
+                        cv2.putText(blank, title, (145, 220),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.75, (140, 140, 140), 2)
+                        cv2.putText(blank, subtitle, (110, 260),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.55, (100, 100, 100), 1)
+                        _, buf = cv2.imencode(".jpg", blank)
+                        placeholder = buf.tobytes()
+                    frame_bytes = placeholder
+
+                yield (b"--frame\r\n"
+                       b"Content-Type: image/jpeg\r\n\r\n" + frame_bytes + b"\r\n")
+                time.sleep(1.0 if demo_mode else 0.04)
+        finally:
+            with self._lock:
+                self._active_stream_viewers = max(0, self._active_stream_viewers - 1)
+                self._last_viewer_disconnect_time = time.time()
+                print(f"[-] Client disconnected from stream. Remaining viewers: {self._active_stream_viewers}")
+                if self._active_stream_viewers == 0:
+                    self.stop()
 
 
 # Global singleton detector instance

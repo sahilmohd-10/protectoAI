@@ -668,5 +668,20 @@
       }
     }
   }
+
+  // Automatic camera hardware release when user closes tab or navigates away
+  function releaseCameraOnExit() {
+    try {
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon('/stop_detection');
+      } else {
+        fetch('/stop_detection', { method: 'POST', keepalive: true });
+      }
+    } catch (e) {
+      // Ignore background unload errors
+    }
+  }
+  window.addEventListener('beforeunload', releaseCameraOnExit);
+  window.addEventListener('pagehide', releaseCameraOnExit);
 </script>
 {% endblock %}

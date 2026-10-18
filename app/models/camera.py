@@ -59,15 +59,26 @@ class Camera(db.Model):
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 
+    _last_sync_time = 0.0
+
     @classmethod
-    def sync_connected_cameras(cls, max_tested=4):
+    def sync_connected_cameras(cls, max_tested=4, force=False):
         """
         Scans system for physically connected webcam devices and indices.
         Uses DirectShow filter graph (pygrabber) on Windows for instant, non-blocking
         device enumeration with friendly hardware names, with OpenCV fallback.
+        Caches for 60 seconds unless force=True.
         """
         import os
+        import time
 
+        now = time.time()
+        if not force and (now - getattr(cls, "_last_sync_time", 0.0)) < 60.0:
+            existing = cls.query.all()
+            if existing:
+                return existing
+
+        cls._last_sync_time = now
         detected = []  # list of tuples (index_int, friendly_name)
 
         # 1. Try DirectShow enumeration (Instant, no device lock, gets real hardware name)

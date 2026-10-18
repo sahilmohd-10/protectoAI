@@ -71,11 +71,9 @@ def start_detection():
     })
 
 
-@video_bp.route("/stop_detection", methods=["POST"])
-@login_required
+@video_bp.route("/stop_detection", methods=["GET", "POST"])
 def stop_detection():
-    # Authenticated users can stop detection
-
+    """Stops detection and releases camera hardware immediately."""
     detector.stop()
     return jsonify({
         "status": "success",
