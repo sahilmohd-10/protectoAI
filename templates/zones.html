@@ -41,6 +41,7 @@
         <img id="roi-stream-bg" src="{{ url_for('video.video_feed') }}"
              class="absolute inset-0 w-full h-full object-contain pointer-events-none opacity-85">
         <canvas id="roiCanvas" width="1280" height="720"
+          data-can-edit="{{ 'true' if current_user.is_admin else 'false' }}"
           class="absolute inset-0 w-full h-full {% if current_user.is_admin %}cursor-crosshair{% else %}pointer-events-none{% endif %} z-10"></canvas>
       </div>
     </div>
@@ -102,7 +103,7 @@
 <script>
   const canvas = document.getElementById('roiCanvas');
   const ctx = canvas.getContext('2d');
-  const canEditRoi = {{ 'true' if current_user.is_admin else 'false' }};
+  const canEditRoi = canvas ? canvas.dataset.canEdit === 'true' : false;
   let points = [];
 
   function getCanvasCoords(event) {
